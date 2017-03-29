@@ -1,0 +1,12 @@
+{
+  "name": "notnullxyz/arid-grazer",
+  "description": "todo",
+  "minimum-stability": "unstable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Marlon van der Linde",
+      "email": "marlon250f@gmail.com"
+    }
+  ]
+}
