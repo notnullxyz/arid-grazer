@@ -1,0 +1,117 @@
+swagger: '2.0'
+info:
+  title: Arid-Grazer API
+  description: Post-Office emulation routing for packaged messages.
+  version: 1.0.0
+host: notnull.xyz
+schemes:
+  - https
+basePath: /
+produces:
+  - application/json
+paths:
+  /packages:
+    put:
+      summary: Submit a package into the system
+      description: |
+        The package endpoint puts a new packaged message on to the system and
+        fires off the lifecycle.
+      parameters:
+        - name: payload
+          in: body
+          description: The main package payload including metadata.
+          required: true
+          schema:
+            $ref: '#/definitions/PackagePayloadSchema'
+      tags:
+        - Packages
+      responses:
+        202:
+          description: |
+            New package accepted into the system, further processing is pending.
+          schema:
+            $ref: '#/definitions/AcceptPackageResSchema'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      tags:
+        - Packages
+      summary: Track a package marked as trackable.
+      description: |
+        This endpoint retrieves tracking information on a package, if it was marked as trackable.
+      responses:
+        200:
+          description: The information for a submitted package, with tracking information, if trackable.
+          schema:
+            $ref: '#/definitions/PackageTransitInfoSchema'
+        404:
+          description: The package was not found in the system due to expiry or removal.
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /me:
+    get:
+      summary: User Profile
+      description: |
+        The User Profile endpoint returns information about the authenticated
+        user's application details, including the **uniq name**'.
+      tags:
+        - User
+      responses:
+        '200':
+          description: Profile information for a user
+          schema:
+            $ref: '#/definitions/TempSchema'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  PackageTransitInfoSchema:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      # this needs expansion...
+  AcceptPackageResSchema:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+  PackagePayloadSchema:
+    type: object
+    properties:
+      dest_uniq:
+        type: string
+        description: 'Unique identifier of the destination, as a uniq name.'
+      label:
+        type: string
+        description: The label as a simple string identifying the package.
+      trackable:
+        type: boolean
+        description: 'When this parameter is true, the package becomes trackable.'
+      content:
+        type: string
+        format: binary
+        description: The package content as binary octet string
+  TempSchema:
+    type: object
+    properties:
+      dest_uniq:
+        type: string
+        description: 'Unique identifier of the destination, as a uniq name.'
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string
