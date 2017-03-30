@@ -40,10 +40,17 @@ paths:
         - Packages
       summary: Track a package marked as trackable.
       description: |
-        This endpoint retrieves tracking information on a package, if it was marked as trackable.
+        This endpoint retrieves trackibg information on a package.
+      parameters:
+        - name: package_id
+          in: query
+          description: The package internal system id
+          required: true
+          type: integer
+          format: int64
       responses:
         200:
-          description: The information for a submitted package, with tracking information, if trackable.
+          description: The information for a submitted package with tracking information.
           schema:
             $ref: '#/definitions/PackageTransitInfoSchema'
         404:
@@ -58,29 +65,89 @@ paths:
       description: |
         The User Profile endpoint returns information about the authenticated
         user's application details, including the **uniq name**'.
+      parameters:
+        - name: uniq
+          in: query
+          description: The **uniq** of this user.
+          required: true
+          type: string
       tags:
         - User
       responses:
-        '200':
+        200:
           description: Profile information for a user
           schema:
-            $ref: '#/definitions/TempSchema'
+            $ref: '#/definitions/UserInfoSchema'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+    put:
+      summary: Update user information for the authenticated user
+      description: This augments the user information on the system with the supplied values.
+      parameters:
+        - name: uniq
+          in: query
+          description: The **uniq** of this user.
+          required: true
+          type: string
+        - name: user_info
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/UserUpdateSchema'
+      tags:
+        - User
+      responses:
+        200:
+          description: The updated user information
+          schema:
+            $ref: '#/definitions/UserInfoSchema'
+        400:
+          description: The user information was not updated.
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
+  UserInfoSchema:
+    type: object
+    properties:
+      uniq:
+        type: string
+        description: The user uniq on the system
+      email:
+        type: string
+        description: A valid email address associated with this user
+  UserUpdateSchema:
+    type: object
+    properties:
+      email:
+        type: string
+        description: A valid email address associated with this user
   PackageTransitInfoSchema:
     type: object
     properties:
       id:
         type: integer
         format: int64
-      # this needs expansion...
+        description: The internal package ID.
+      status:
+        type: integer
+        format: int32
+        description: The last status applied by a stage of internal processing
+      touchtime:
+        type: string
+        format: dateTime
+        description: The RFC3339 date-time of the last status update
+      origin:
+        type: string
+        description: The **uniq** of the package origin (sender's uniq).
+      dest:
+        type: string
+        description: The **uniq** of the package destination (recipient's uniq).
   AcceptPackageResSchema:
     type: object
     properties:
-      id:
+      package_id:
         type: integer
         format: int64
   PackagePayloadSchema:
@@ -92,19 +159,10 @@ definitions:
       label:
         type: string
         description: The label as a simple string identifying the package.
-      trackable:
-        type: boolean
-        description: 'When this parameter is true, the package becomes trackable.'
       content:
         type: string
         format: binary
         description: The package content as binary octet string
-  TempSchema:
-    type: object
-    properties:
-      dest_uniq:
-        type: string
-        description: 'Unique identifier of the destination, as a uniq name.'
   Error:
     type: object
     properties:
