@@ -9,7 +9,13 @@ This repository is composed of the service, producer and processor code. To part
 ### How do I get set up? ###
 
 This will be populated with useful information soon.
-(talk about composer, .env, lumen, requirements, etc)
+
+```
+#!swagger
+
+talk about composer, .env, lumen, requirements, etc
+```
+
 
 ### Who do I talk to? ###
 
