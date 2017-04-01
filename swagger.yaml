@@ -11,6 +11,13 @@ produces:
   - application/json
 consumes:
   - application/json
+parameters:
+  ApiVersionHeader:
+    name: API-Version
+    description: The required API Version to query
+    type: int
+    in: header
+    required: true
 paths:
   /package:
     put:
@@ -19,6 +26,7 @@ paths:
         The package endpoint puts a new packaged message on to the system and
         fires off the lifecycle.
       parameters:
+        - $ref: '#/parameters/ApiVersionHeader'
         - name: dest
           in: path
           description: The *uniq* of the destination (the recipient)
@@ -49,6 +57,7 @@ paths:
       description: |
         This endpoint retrieves a package by its stored reference/identifier.
       parameters:
+        - $ref: '#/parameters/ApiVersionHeader'
         - name: package_id
           in: path
           description: The package internal system id
@@ -73,6 +82,7 @@ paths:
         The User Profile endpoint returns information about the authenticated
         user's application details, including the **uniq name**'.
       parameters:
+        - $ref: '#/parameters/ApiVersionHeader'
         - name: uniq
           in: path
           description: The **uniq** of this user.
@@ -93,6 +103,7 @@ paths:
       summary: Update user information for the authenticated user
       description: This augments the user information on the system with the supplied values.
       parameters:
+        - $ref: '#/parameters/ApiVersionHeader'
         - name: uniq
           in: path
           description: The **uniq** of this user.

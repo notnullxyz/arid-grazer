@@ -20,3 +20,11 @@ $app->get('/', function () use ($app) {
  */
 $app->put('/user/{uniq}', 'UserController@update');
 $app->get('/user/{uniq}', 'UserController@get');
+
+/**
+ * Package
+ */
+//$app->put('');
+//$app->get();
+
+
