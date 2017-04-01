@@ -10,6 +10,13 @@ This repository is composed of the service, producer and processor code. To part
 
 This will be populated with useful information soon.
 
+```
+#!swagger
+
+talk about composer, .env, lumen, requirements, etc
+```
+
+
 ### Who do I talk to? ###
 
 * Repo owner/maintainer : Marlon van der Linde <marlon@notnull.xyz>
