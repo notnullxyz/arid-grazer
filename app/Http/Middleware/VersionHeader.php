@@ -4,6 +4,9 @@ namespace App\Http\Middleware;
 
 use Closure;
 
+define("PRECONDITION_FAILED", 412);
+define("NOT_FOUND", 412);
+
 class VersionHeader
 {
     /**
@@ -17,12 +20,12 @@ class VersionHeader
     {
         $version = intval($request->header('api-version'));
         if (!$version) {
-            return response("Requires API-Version header", 412);
+            return response("Requires API-Version header", PRECONDITION_FAILED);
         } else {
             if (in_array($version, explode(',', env('API_SUPPORTED_VERSIONS')))) {
                 return $next($request);
             }
-            return response("Requested API-Version not available", 404);
+            return response("Requested API-Version not available", NOT_FOUND);
         }
     }
 }
