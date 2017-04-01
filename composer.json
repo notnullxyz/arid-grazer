@@ -1,7 +1,7 @@
 {
-    "name": "laravel/lumen",
-    "description": "The Laravel Lumen Framework.",
-    "keywords": ["framework", "laravel", "lumen"],
+    "name": "Arid-Grazer",
+    "description": "Post-Office Emulating Messager API",
+    "keywords": ["messaging", "api", "laravel", "lumen"],
     "license": "MIT",
     "type": "project",
     "require": {

@@ -1,30 +1,37 @@
 swagger: '2.0'
 info:
-  title: Arid-Grazer API
-  description: Post-Office emulation routing for packaged messages.
+  title: Arid-Grazer API (AGAPI)
+  description: Post-Office emulating routing for packaged messages.
   version: 1.0.0
 host: notnull.xyz
 schemes:
-  - https
+  - http
 basePath: /
 produces:
   - application/json
+consumes:
+  - application/json
 paths:
-  /packages:
+  /package:
     put:
       summary: Submit a package into the system
       description: |
         The package endpoint puts a new packaged message on to the system and
         fires off the lifecycle.
       parameters:
+        - name: dest
+          in: path
+          description: The *uniq* of the destination (the recipient)
+          required: true
+          type: string
         - name: payload
           in: body
-          description: The main package payload including metadata.
+          description: The package payload (contents).
           required: true
           schema:
-            $ref: '#/definitions/PackagePayloadSchema'
+            $ref: '#/definitions/PackageCreateSchema'
       tags:
-        - Packages
+        - Package
       responses:
         202:
           description: |
@@ -37,29 +44,29 @@ paths:
             $ref: '#/definitions/Error'
     get:
       tags:
-        - Packages
-      summary: Track a package marked as trackable.
+        - Package
+      summary: Retrieve a stored package (a package that was sent and persisted)
       description: |
-        This endpoint retrieves trackibg information on a package.
+        This endpoint retrieves a package by its stored reference/identifier.
       parameters:
         - name: package_id
-          in: query
+          in: path
           description: The package internal system id
           required: true
           type: integer
           format: int64
       responses:
         200:
-          description: The information for a submitted package with tracking information.
+          description: The retrieved package
           schema:
-            $ref: '#/definitions/PackageTransitInfoSchema'
+            $ref: '#/definitions/PackageRetrieveSchema'
         404:
           description: The package was not found in the system due to expiry or removal.
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /me:
+  /user:
     get:
       summary: User Profile
       description: |
@@ -67,7 +74,7 @@ paths:
         user's application details, including the **uniq name**'.
       parameters:
         - name: uniq
-          in: query
+          in: path
           description: The **uniq** of this user.
           required: true
           type: string
@@ -87,7 +94,7 @@ paths:
       description: This augments the user information on the system with the supplied values.
       parameters:
         - name: uniq
-          in: query
+          in: path
           description: The **uniq** of this user.
           required: true
           type: string
@@ -95,7 +102,7 @@ paths:
           in: body
           required: true
           schema:
-            $ref: '#/definitions/UserUpdateSchema'
+            $ref: '#/definitions/UserMutationSchema'
       tags:
         - User
       responses:
@@ -117,52 +124,49 @@ definitions:
       email:
         type: string
         description: A valid email address associated with this user
-  UserUpdateSchema:
+  UserMutationSchema:
     type: object
     properties:
       email:
         type: string
         description: A valid email address associated with this user
-  PackageTransitInfoSchema:
-    type: object
-    properties:
-      id:
-        type: integer
-        format: int64
-        description: The internal package ID.
-      status:
-        type: integer
-        format: int32
-        description: The last status applied by a stage of internal processing
-      touchtime:
-        type: string
-        format: dateTime
-        description: The RFC3339 date-time of the last status update
-      origin:
-        type: string
-        description: The **uniq** of the package origin (sender's uniq).
-      dest:
-        type: string
-        description: The **uniq** of the package destination (recipient's uniq).
   AcceptPackageResSchema:
     type: object
     properties:
       package_id:
         type: integer
         format: int64
-  PackagePayloadSchema:
+  PackageCreateSchema:
     type: object
     properties:
-      dest_uniq:
-        type: string
-        description: 'Unique identifier of the destination, as a uniq name.'
       label:
         type: string
         description: The label as a simple string identifying the package.
+      expire:
+        type: integer
+        format: int32
+        description: An optional expiry time, where the system will discard the package if not claimed.
       content:
         type: string
         format: binary
-        description: The package content as binary octet string
+        description: The package content as binary sequence of octets
+  PackageRetrieveSchema:
+    type: object
+    properties:
+      origin:
+        type: string
+        description: The *uniq* of the sender, or origin.
+      label:
+        type: string
+        description: The label as a simple human-readable identifier, as supplied by origin.
+      sent:
+        type: string
+        format: date-time
+        description: The date-time the package was submitted into the system.
+      content:
+        type: string
+        format: binary
+        description: The package contents as binary sequence of octetsa
   Error:
     type: object
     properties:

@@ -14,3 +14,9 @@
 $app->get('/', function () use ($app) {
     return $app->version();
 });
+
+/**
+ * User
+ */
+$app->put('/user/{uniq}', 'UserController@update');
+$app->get('/user/{uniq}', 'UserController@get');
