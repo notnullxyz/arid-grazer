@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\v1;
+namespace App\Http\Controllers\v2;
 
 use Log;
 use Illuminate\Http\Request;
@@ -22,13 +22,13 @@ class UserController extends Controller
 
         Log::info('UserController/update for uniq ' . $uniq);
 
-        return "PUT v1 /user/" . $uniq;
+        return "PUT v2 /user/" . $uniq;
     }
 
     public function get(string $uniq)
     {
         Log::info('UserController/get for uniq ' . $uniq);
 
-        return "GET v1 /user/" . $uniq;
+        return "GET v2 /user/" . $uniq;
     }
 }

@@ -10,10 +10,12 @@ define("NOT_FOUND", 412);
 class VersionHeader
 {
     /**
-     * Handle an incoming request to determine the api version headers.
+     * Handle an incoming request to determine the api version headers. Responds with the version set or an appropriate
+     * failing http response.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
+     * @param   mixed   $apiVersion
      * @return mixed
      */
     public function handle($request, Closure $next)
@@ -23,7 +25,8 @@ class VersionHeader
             return response("Requires API-Version header", PRECONDITION_FAILED);
         } else {
             if (in_array($version, explode(',', env('API_SUPPORTED_VERSIONS')))) {
-                return $next($request);
+                // Set or do something with the final version here, then move on...
+                return $next($request, $version);
             }
             return response("Requested API-Version not available", NOT_FOUND);
         }

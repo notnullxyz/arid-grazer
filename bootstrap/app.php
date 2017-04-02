@@ -60,12 +60,12 @@ $app->singleton(
 */
 
 $app->middleware([
-    App\Http\Middleware\VersionHeader::class
+    //App\Http\Middleware\VersionHeader::class
 ]);
 
-// $app->routeMiddleware([
+$app->routeMiddleware([
 //     'auth' => App\Http\Middleware\Authenticate::class,
-// ]);
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -93,8 +93,22 @@ $app->middleware([
 |
 */
 
-$app->group(['namespace' => 'App\Http\Controllers'], function ($app) {
-    require __DIR__.'/../routes/web.php';
-});
+print "<pre>";
+var_dump($app);
+
+if (1) {
+    $app->group(
+        ['namespace' => 'App\Http\Controllers'], function ($app) {
+        require __DIR__ . '/../routes/routes-v1.php';
+    }
+    );
+} else {
+    $app->group(
+        ['namespace' => 'App\Http\Controllers'], function ($app) {
+        require __DIR__ . '/../routes/routes-v1.php';
+    }
+    );
+}
+
 
 return $app;
