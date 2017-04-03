@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\v1;
 
 use Log;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class UserController extends Controller
 {
@@ -28,6 +29,6 @@ class UserController extends Controller
     {
         Log::info('UserController/get for uniq ' . $uniq);
 
-        return "GET /user/" . $uniq;
+        return "GET v1 /user/" . $uniq;
     }
 }

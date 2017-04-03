@@ -11,15 +11,20 @@
 |
 */
 
+use App\Library\ApiVersionTool;
+
+$apiVersion = 'v' . ApiVersionTool::validateAndGetApiVersionFromHeader();
+
 $app->get('/', function () use ($app) {
     return $app->version();
 });
 
+
 /**
  * User
  */
-$app->put('/user/{uniq}', 'UserController@update');
-$app->get('/user/{uniq}', 'UserController@get');
+$app->put('/user/{uniq}', $apiVersion.'\UserController@update');
+$app->get('/user/{uniq}', $apiVersion.'\UserController@get');
 
 /**
  * Package
