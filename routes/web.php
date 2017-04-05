@@ -25,6 +25,7 @@ $app->get('/', function () use ($app) {
  */
 $app->put('/user/{uniq}', $apiVersion.'\UserController@update');
 $app->get('/user/{uniq}', $apiVersion.'\UserController@get');
+$app->post('/user/{uniq}', $apiVersion.'\UserController@create');
 
 /**
  * Package

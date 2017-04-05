@@ -10,7 +10,6 @@
 | is ready to receive HTTP / Console requests from the environment.
 |
 */
-
 $app = require __DIR__.'/../bootstrap/app.php';
 
 /*
@@ -24,7 +23,4 @@ $app = require __DIR__.'/../bootstrap/app.php';
 | and wonderful application we have prepared for them.
 |
 */
-
-
-
 $app->run();

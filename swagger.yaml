@@ -76,6 +76,28 @@ paths:
           schema:
             $ref: '#/definitions/Error'
   /user:
+    post:
+      summary: User Create
+      description: |
+        The user create endpoint registeres a new user on the system.
+      parameters:
+        - $ref: '#/parameters/ApiVersionHeader'
+        - name: user_info
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/UserMutationSchema'
+      tags:
+        - User
+      responses:
+        201:
+          description: A user resource was created.
+          schema:
+            $ref: '#/definitions/UserInfoSchema'
+        400:
+          description: The user was not created.
+          schema:
+            $ref: '#/definitions/Error'
     get:
       summary: User Profile
       description: |

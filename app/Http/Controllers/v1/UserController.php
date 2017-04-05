@@ -31,4 +31,11 @@ class UserController extends Controller
 
         return "GET v1 /user/" . $uniq;
     }
+
+    public function create()
+    {
+        Log::info('UserController/create');
+
+        return "POST v1 /user/";
+    }
 }
