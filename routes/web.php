@@ -24,8 +24,9 @@ $app->get('/', function () use ($app) {
  * User
  */
 $app->put('/user/{uniq}', $apiVersion.'\UserController@update');
-$app->get('/user/{uniq}', $apiVersion.'\UserController@get');
-$app->post('/user/{uniq}', $apiVersion.'\UserController@create');
+$app->get('/user/{email}', $apiVersion.'\UserController@get');
+$app->post('/user', $apiVersion.'\UserController@create');
+
 
 /**
  * Package
