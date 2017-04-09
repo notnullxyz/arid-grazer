@@ -39,12 +39,12 @@ interface IGrazerRedisService
     public function setPackage(IGrazerRedisPackageVO $package, string $hash);
 
     /**
-     * Retrieves a package from the system, by its internal package ID
-     * @param int $packageId
+     * Retrieves a package from the system, by its internal package Hash
+     * @param int $packageHash
      *
      * @return IGrazerRedisPackageVO
      */
-    public function getPackage(int $packageId) : IGrazerRedisPackageVO;
+    public function getPackage(string $packageHash) : IGrazerRedisPackageVO;
 
 
     /**

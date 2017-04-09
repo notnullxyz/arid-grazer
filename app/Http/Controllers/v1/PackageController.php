@@ -65,17 +65,23 @@ class PackageController extends Controller
                 "A package with this exact hash, has already been inserted in the system -" . $VOHash);
         }
 
-        return response()->json($packageVO->get(), 200);
+        // Augment the response with the ID included. Useful for clients.
+        $packageResponse = $packageVO->get();
+        $packageResponse['id'] = $VOHash;
+
+        return response()->json($packageResponse, 200);
     }
 
     /**
-     * Retrieves a package from the system by its ID.
+     * Retrieves a package from the system by its hash.
      *
-     * @param int $pId Package ID
+     * @param int $pId Package hash
      */
-    public function get($pId)
+    public function get($pHash)
     {
-
+        Log::info('PackageController/get for hash ' . $pHash);
+        $cachedPackage = $this->grazerRedisService->getPackage($pHash);
+        return response()->json($cachedPackage->get(), 200);
     }
 
     /**

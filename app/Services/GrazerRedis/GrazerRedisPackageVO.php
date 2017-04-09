@@ -26,7 +26,16 @@ class GrazerRedisPackageVO implements IGrazerRedisPackageVO
         $this->destination = $destination;
         $this->label = $label;
         $this->sent = $sent;
-        $this->content = json_encode($content);
+
+        // If not an array, and valid json, store as is, else encode it.
+        if (!is_array($content)) {
+            json_decode($content);
+            $this->content = (json_last_error() == JSON_ERROR_NONE) ? strval($content) : json_encode($content);
+        } else {
+            // if it's an array (origin sent us some json inside content... we just encode and move on.
+            $this->content = json_encode($content);
+        }
+
         $this->expire = $expire;
     }
 
@@ -42,7 +51,7 @@ class GrazerRedisPackageVO implements IGrazerRedisPackageVO
             'label' => $this->label,
             'sent' => $this->sent,
             'expire' => $this->expire,
-            'content' => $this->content
+            'content' => $this->content,
         ];
     }
 

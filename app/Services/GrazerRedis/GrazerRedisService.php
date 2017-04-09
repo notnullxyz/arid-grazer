@@ -135,7 +135,7 @@ class GrazerRedisService implements IGrazerRedisService
             }
             return new GrazerRedisUserVO($uniq, $email, $active, $created);
         } else {
-            abort(404, "Could not find anything on this key $uniqKey");
+            abort(404, "Could not find a living uniq on this key $uniqKey");
         }
     }
 
@@ -156,10 +156,23 @@ class GrazerRedisService implements IGrazerRedisService
     /**
      * @inheritDoc
      */
-    public function getPackage(int $packageId): IGrazerRedisPackageVO
+    public function getPackage(string $packageHash): IGrazerRedisPackageVO
     {
         $this->client->select($this->dbPackage);
-        // remember to get current ttl remaining.
+
+        $dest = $label = $expire = $content = $origin = $sent = null;
+
+        if ($this->client->exists($packageHash)) {
+            if (!extract($this->client->hgetall($packageHash))) {
+                abort(500, 'Something went rotten while getting user hash');
+            }
+
+            $expire = $this->client->ttl($packageHash);     // we care about what's remaining.
+
+            return new GrazerRedisPackageVO($origin, $dest, $label, $sent, $expire, $content);
+        } else {
+            abort(404, "Could not find a package on this hash $packageHash");
+        }
     }
 
     /**
