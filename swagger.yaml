@@ -105,9 +105,9 @@ paths:
         user's application details, including the **uniq name**'.
       parameters:
         - $ref: '#/parameters/ApiVersionHeader'
-        - name: uniq
+        - name: email
           in: path
-          description: The **uniq** of this user.
+          description: The **email** of this user.
           required: true
           type: string
       tags:
