@@ -9,7 +9,6 @@
 
 namespace App\Services\GrazerRedis;
 
-use Psr\Log\InvalidArgumentException;
 
 /**
  * Class GrazerRedisUser of type GrazerRedisVO

@@ -16,14 +16,25 @@ class GrazerRedisService implements IGrazerRedisService
 {
 
     private $client;
-    private $dbIndex, $dbUser, $dbPackage;
+    private $dbIndexUser, $dbUser, $dbIndexPackage, $dbPackage, $dbCounter;
 
     public function __construct()
     {
         $this->client = $this->createClient();
-        $this->dbIndex = env('REDIS_DB_INDEX', 3);
+        $this->dbIndexUser = env('REDIS_DB_INDEX_USER', 3);
         $this->dbUser = env('REDIS_DB_USER', 1);
         $this->dbPackage = env('REDIS_DB_PACKAGE', 2);
+        $this->dbIndexPackage = env('REDIS_DB_INDEX_PACKAGE', 4);
+        $this->dbCounter = env('REDIS_DB_COUNTER', 5);
+
+        if (!defined('COUNTER_KEY_USER')) {
+            define('COUNTER_KEY_USER', 'users_total_ever');
+        }
+
+        if (!defined('COUNTER_KEY_PACKAGE')) {
+            define('COUNTER_KEY_PACKAGE', 'packages_total_ever');
+        }
+
     }
 
     /**
@@ -50,7 +61,7 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function emailExists($email) : bool
     {
-        $this->client->select($this->dbIndex);
+        $this->client->select($this->dbIndexUser);
         return $this->client->exists($email);
     }
 
@@ -74,7 +85,7 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function userIndexSet($email, $uniq)
     {
-        $this->client->select($this->dbIndex);
+        $this->client->select($this->dbIndexUser);
         if (!$this->client->exists($email)) {
             $this->client->set($email, $uniq);
         } else {
@@ -85,7 +96,7 @@ class GrazerRedisService implements IGrazerRedisService
 
     public function userIndexGet($email)
     {
-        $this->client->select($this->dbIndex);
+        $this->client->select($this->dbIndexUser);
         if ($this->client->exists($email)) {
             $this->client->get($email);
         } else {
@@ -105,7 +116,9 @@ class GrazerRedisService implements IGrazerRedisService
         if (!$result) {
             abort(500, 'Something went rotten while persisting the user hash');
         }
+
         $this->userIndexSet($user->get()['email'], $uniq);
+        $this->countIncrement(constant('COUNTER_KEY_USER'));
     }
 
     /**
@@ -122,24 +135,44 @@ class GrazerRedisService implements IGrazerRedisService
             }
             return new GrazerRedisUserVO($uniq, $email, $active, $created);
         } else {
-            abort(404, "Could not find a hash on this key $uniqKey");
+            abort(404, "Could not find a living uniq on this key $uniqKey");
         }
     }
 
     /**
      * @inheritDoc
      */
-    public function setPackage(IGrazerRedisPackageVO $package): int
+    public function setPackage(IGrazerRedisPackageVO $packageVO, string $hash)
     {
-        // TODO: Implement setPackage() method.
+        $this->client->select($this->dbPackage);
+        $package = $packageVO->get();
+
+        $this->client->hmset($hash, $package);
+        $this->client->expire($hash, $package['expire']);
+        $this->packageIndexSet($hash, $package['dest'], $package['expire']);
+        $this->countIncrement(constant('COUNTER_KEY_PACKAGE'));
     }
 
     /**
      * @inheritDoc
      */
-    public function getPackage(int $packageId): IGrazerRedisPackageVO
+    public function getPackage(string $packageHash): IGrazerRedisPackageVO
     {
-        // TODO: Implement getPackage() method.
+        $this->client->select($this->dbPackage);
+
+        $dest = $label = $expire = $content = $origin = $sent = null;
+
+        if ($this->client->exists($packageHash)) {
+            if (!extract($this->client->hgetall($packageHash))) {
+                abort(500, 'Something went rotten while getting user hash');
+            }
+
+            $expire = $this->client->ttl($packageHash);     // we care about what's remaining.
+
+            return new GrazerRedisPackageVO($origin, $dest, $label, $sent, $expire, $content);
+        } else {
+            abort(404, "Could not find a package on this hash $packageHash");
+        }
     }
 
     /**
@@ -147,8 +180,67 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function touchPackageTTL(int $packageId, int $ttl): void
     {
-        // TODO: Implement touchPackageTTL() method.
+        $this->client->select($this->dbPackage);
+
     }
 
+    /**
+     * Convenience wrapper for checking the existence of a package hash in the package index. No more, no less.
+     * @param $hash
+     *
+     * @return bool
+     */
+    public function packageExists($hash) : bool
+    {
+        $this->client->select($this->dbIndexPackage);
+        if ($this->client->exists($hash)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Set a package index entry, as package id/hash -> uniq
+     *
+     * @param $uniqDest Uniq of the receiver of this package.
+     * @param $packageHash
+     * @param $ttl
+     */
+    public function packageIndexSet($packageHash, $uniqDest, $ttl)
+    {
+        $this->client->select($this->dbIndexPackage);
+        if (!$this->client->exists($packageHash)) {
+            $this->client->set($packageHash, $uniqDest);
+            $this->client->expire($packageHash, $ttl);
+            return;
+        } else {
+            abort(409, "Package hash '$packageHash' already exists in the package index");
+        }
+    }
+
+    /**
+     * Retrieve a package index hash->id, if it exists.
+     * @param $packageHash
+     *
+     * @return int Package ID
+     */
+    public function packageIndexGet($packageHash)
+    {
+        $this->client->select($this->dbIndexPackage);
+        if ($this->client->exists($packageHash)) {
+            return (int)$this->client->get($packageHash);
+        }
+        abort(404, "The package hash $packageHash does not exist in the package index");
+    }
+
+    /**
+     * Internal function to increment a counter in the datastore.
+     * @param string $key The key to increment
+     */
+    private function countIncrement($key) : int
+    {
+        $this->client->select($this->dbCounter);
+        return intval($this->client->incr($key));
+    }
 
 }
