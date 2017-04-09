@@ -194,6 +194,9 @@ definitions:
       origin:
         type: string
         description: The *uniq* of the sender, or origin.
+      dest:
+        type: string
+        description: The *uniq* of the receiver, or destination.
       label:
         type: string
         description: The label as a simple human-readable identifier, as supplied by origin.

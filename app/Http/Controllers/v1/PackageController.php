@@ -32,13 +32,26 @@ class PackageController extends Controller
         $expire = $this->request->get('expire');
         $content = $this->request->get('content');
 
-        // @todo - toninue after user conflict / index by uniq
-
-
+        // basic checks to help curb duplication.
 
     }
 
-    public function get()
+    /**
+     * Retrieves a package from the system by its ID.
+     *
+     * @param int $pId Package ID
+     */
+    public function get($pId)
+    {
+
+    }
+
+    /**
+     * This expires a package and purges it from the system.
+     *
+     * @param int $pId Package ID
+     */
+    private function expire($pId)
     {
 
     }
