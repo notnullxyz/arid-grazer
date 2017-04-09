@@ -27,19 +27,12 @@ class UserController extends Controller
         return new Response('Not Available', 404);
     }
 
-    public function get(string $email)
+    public function get(string $uniq)
     {
-        Log::info('UserController/get for email ' . $email);
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return new Response('Email not accepted', 422);
-        }
+        Log::info('UserController/get for uniq ' . $uniq);
 
-
-        print "going to try get '$email' now";
-        $cachedUser = $this->datastore->getUser($email);
-        print "got it";
-        dd($cachedUser);
-
+        $cachedUser = $this->datastore->getUser($uniq);
+        return response()->json($cachedUser->get(), 200);
     }
 
     public function create()
@@ -65,12 +58,13 @@ class UserController extends Controller
         try {
             $user = new GrazerRedisUserVO($uniq, $email, true, $this->created = microtime(true));
             $this->datastore->setUser($user);
+
         } catch (InvalidArgumentException $iae) {
             return new Response('Provided parameters were not acceptable', 422);
         } catch (\Exception $e) {
-            return new Response('Client error occurred', 400);
+            return new Response('Some error occurred in create: ' . $e->getMessage(), 500);
         }
 
-        return new Response('User Created', 201);
+        return response()->json($user->get(), 200);
     }
 }
