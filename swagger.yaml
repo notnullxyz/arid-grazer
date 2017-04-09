@@ -157,6 +157,13 @@ definitions:
       email:
         type: string
         description: A valid email address associated with this user
+      created:
+        type: string
+        format: date-time
+        description: Creation date set by the system
+      active:
+        type: boolean
+        description: Whether this is an active user
   UserMutationSchema:
     type: object
     properties:
