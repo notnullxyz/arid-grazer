@@ -20,18 +20,13 @@ parameters:
     required: true
 paths:
   /package:
-    put:
+    post:
       summary: Submit a package into the system
       description: |
         The package endpoint puts a new packaged message on to the system and
         fires off the lifecycle.
       parameters:
         - $ref: '#/parameters/ApiVersionHeader'
-        - name: dest
-          in: path
-          description: The *uniq* of the destination (the recipient)
-          required: true
-          type: string
         - name: payload
           in: body
           description: The package payload (contents).
@@ -179,6 +174,9 @@ definitions:
   PackageCreateSchema:
     type: object
     properties:
+      dest:
+        type: string
+        description: The *uniq* of the destination (the recipient)
       label:
         type: string
         description: The label as a simple string identifying the package.
