@@ -65,10 +65,11 @@ class UserController extends Controller
         try {
             $user = new GrazerRedisUserVO($uniq, $email, true, $this->created = microtime(true));
             $this->datastore->setUser($user);
+
         } catch (InvalidArgumentException $iae) {
             return new Response('Provided parameters were not acceptable', 422);
         } catch (\Exception $e) {
-            return new Response('Client error occurred', 400);
+            return new Response('Some error occurred in create: ' . $e->getMessage(), 500);
         }
 
         return new Response('User Created', 201);

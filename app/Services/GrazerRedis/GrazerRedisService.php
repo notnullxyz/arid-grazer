@@ -16,10 +16,14 @@ class GrazerRedisService implements IGrazerRedisService
 {
 
     private $client;
+    private $dbIndex, $dbUser, $dbPackage;
 
     public function __construct()
     {
         $this->client = $this->createClient();
+        $this->dbIndex = env('REDIS_DB_INDEX', 3);
+        $this->dbUser = env('REDIS_DB_USER', 1);
+        $this->dbPackage = env('REDIS_DB_PACKAGE', 2);
     }
 
     /**
@@ -43,9 +47,44 @@ class GrazerRedisService implements IGrazerRedisService
         return $this->client->exists($email);
     }
 
-    public function exists($email, $uniq) : bool
+    /**
+     * Check a given uniq for existence.
+     * @param $email
+     * @param $uniq
+     *
+     * @return bool
+     */
+    public function exists($uniq) : bool
     {
-        return $this->client->hexists($email, $uniq);
+        $this->$this->client->select($this->dbUser);
+        return $this->client->exists($uniq);
+    }
+
+    /**
+     * Create an index in the user index.
+     * @param $email
+     * @param $uniq
+     */
+    public function userIndexSet($email, $uniq)
+    {
+        $this->$this->client->select($this->dbIndex);
+        if (!$this->client->exists($email)) {
+            $this->client->set($email, $uniq);
+        } else {
+            abort(409, "Key '$email' exists in the Grazer Index");
+        }
+
+    }
+
+    public function userIndexGet($email)
+    {
+        $this->$this->client->select($this->dbIndex);
+        if ($this->client->exists($email)) {
+            $this->client->get($email);
+        } else {
+            abort(404, "Key '$email' does not exist in the Grazer Index");
+        }
+
     }
 
     /**
@@ -53,27 +92,28 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function setUser(IGrazerRedisUserVO $user): void
     {
-        $email = $user->get()['email'];
-        $result = $this->client->hmset($email, $user->get());
+        $uniq = $user->get()['uniq'];
+        $result = $this->client->hmset($uniq, $user->get());
         if (!$result) {
-            abort(500, 'Something went rotten while setting user hash');
+            abort(500, 'Something went rotten while persisting the user hash');
         }
+        $this->userIndexSet($user->get()['email'], $uniq);
     }
 
     /**
      * @inheritDoc
      */
-    public function getUser(string $emailKey): IGrazerRedisUserVO
+    public function getUser(string $uniqKey): IGrazerRedisUserVO
     {
         $email = $created = $uniq = $active = null;
 
-        if ($this->client->exists($emailKey)) {
-            if (!extract($this->client->hgetall($emailKey))) {
+        if ($this->client->exists($uniqKey)) {
+            if (!extract($this->client->hgetall($uniqKey))) {
                 abort(500, 'Something went rotten while getting user hash');
             }
             return new GrazerRedisUserVO($uniq, $email, $active, $created);
         } else {
-            abort(404, "Could not find a hash on this key $emailKey");
+            abort(404, "Could not find a hash on this key $uniqKey");
         }
     }
 

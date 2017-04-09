@@ -24,11 +24,12 @@ interface IGrazerRedisService
 
     /**
      * Retrieves a user by its email, from the system
-     * @param string $email
+     *
+     * @param string $uniq
      *
      * @return IGrazerRedisUserVO
      */
-    public function getUser(string $email) : IGrazerRedisUserVO;
+    public function getUser(string $uniq) : IGrazerRedisUserVO;
 
     /**
      * Creates a package in the courier system and returns its internal id.
