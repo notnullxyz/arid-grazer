@@ -34,12 +34,8 @@ class UserController extends Controller
             return new Response('Email not accepted', 422);
         }
 
-
-        print "going to try get '$email' now";
         $cachedUser = $this->datastore->getUser($email);
-        print "got it";
-        dd($cachedUser);
-
+        return response()->json($cachedUser->get(), 200);
     }
 
     public function create()
