@@ -32,12 +32,11 @@ interface IGrazerRedisService
     public function getUser(string $uniq) : IGrazerRedisUserVO;
 
     /**
-     * Creates a package in the courier system and returns its internal id.
+     * Creates a package in the courier system.
      * @param IGrazerRedisPackageVO $package
      *
-     * @return int
      */
-    public function setPackage(IGrazerRedisPackageVO $package) : int;
+    public function setPackage(IGrazerRedisPackageVO $package, string $hash);
 
     /**
      * Retrieves a package from the system, by its internal package ID

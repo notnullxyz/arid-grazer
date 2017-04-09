@@ -116,8 +116,9 @@ class GrazerRedisService implements IGrazerRedisService
         if (!$result) {
             abort(500, 'Something went rotten while persisting the user hash');
         }
+
         $this->userIndexSet($user->get()['email'], $uniq);
-        print $this->countIncrement(constant('COUNTER_KEY_USER'));
+        $this->countIncrement(constant('COUNTER_KEY_USER'));
     }
 
     /**
@@ -141,21 +142,15 @@ class GrazerRedisService implements IGrazerRedisService
     /**
      * @inheritDoc
      */
-    public function setPackage(IGrazerRedisPackageVO $package): int
+    public function setPackage(IGrazerRedisPackageVO $packageVO, string $hash)
     {
         $this->client->select($this->dbPackage);
+        $package = $packageVO->get();
 
-        // build up a package VO
-
-        // hash it
-
-        // check if it exists in the index
-
-        // if not: persist the package to the package db
-        // if it does: respond with 409
-
-        // on success, respond with 200 and package info schema (including new id)
-
+        $this->client->hmset($hash, $package);
+        $this->client->expire($hash, $package['expire']);
+        $this->packageIndexSet($hash, $package['dest'], $package['expire']);
+        $this->countIncrement(constant('COUNTER_KEY_PACKAGE'));
     }
 
     /**
@@ -164,7 +159,7 @@ class GrazerRedisService implements IGrazerRedisService
     public function getPackage(int $packageId): IGrazerRedisPackageVO
     {
         $this->client->select($this->dbPackage);
-
+        // remember to get current ttl remaining.
     }
 
     /**
@@ -177,16 +172,34 @@ class GrazerRedisService implements IGrazerRedisService
     }
 
     /**
-     * Set a package index entry, as package-hash -> package id
+     * Convenience wrapper for checking the existence of a package hash in the package index. No more, no less.
+     * @param $hash
      *
-     * @param $id
-     * @param $packageHash
+     * @return bool
      */
-    public function packageIndexSet($id, $packageHash)
+    public function packageExists($hash) : bool
+    {
+        $this->client->select($this->dbIndexPackage);
+        if ($this->client->exists($hash)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Set a package index entry, as package id/hash -> uniq
+     *
+     * @param $uniqDest Uniq of the receiver of this package.
+     * @param $packageHash
+     * @param $ttl
+     */
+    public function packageIndexSet($packageHash, $uniqDest, $ttl)
     {
         $this->client->select($this->dbIndexPackage);
         if (!$this->client->exists($packageHash)) {
-            return $this->client->set($packageHash, $id);
+            $this->client->set($packageHash, $uniqDest);
+            $this->client->expire($packageHash, $ttl);
+            return;
         } else {
             abort(409, "Package hash '$packageHash' already exists in the package index");
         }
@@ -205,19 +218,6 @@ class GrazerRedisService implements IGrazerRedisService
             return (int)$this->client->get($packageHash);
         }
         abort(404, "The package hash $packageHash does not exist in the package index");
-    }
-
-
-    /**
-     * Generate a hash from the package VO as a kind-of-signature.
-     *
-     * @param IGrazerRedisPackageVO $packageVO
-     *
-     * @return string
-     */
-    private function makePackageHash(IGrazerRedisPackageVO $packageVO) : string
-    {
-
     }
 
     /**

@@ -17,15 +17,17 @@ class GrazerRedisPackageVO implements IGrazerRedisPackageVO
     private $destination;
     private $label;
     private $sent;
+    private $expire;
     private $content;
 
-    public function __construct($origin, $destination, $label, $sent, $content)
+    public function __construct(string $origin, string $destination, string $label, $sent, $expire, $content)
     {
         $this->origin = $origin;
         $this->destination = $destination;
         $this->label = $label;
         $this->sent = $sent;
-        $this->content = $content;
+        $this->content = json_encode($content);
+        $this->expire = $expire;
     }
 
     /**
@@ -35,10 +37,12 @@ class GrazerRedisPackageVO implements IGrazerRedisPackageVO
     public function get() : array
     {
         return [
-            'email' => $this->email,
-            'uniq' => $this->uniq,
-            'created' => $this->created,
-            'active' => $this->active
+            'origin' => $this->origin,
+            'dest' => $this->destination,
+            'label' => $this->label,
+            'sent' => $this->sent,
+            'expire' => $this->expire,
+            'content' => $this->content
         ];
     }
 

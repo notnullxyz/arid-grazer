@@ -11,4 +11,5 @@ namespace App\Services\GrazerRedis;
 
 interface IGrazerRedisUserVO
 {
+    public function get();
 }

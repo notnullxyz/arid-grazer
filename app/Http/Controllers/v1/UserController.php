@@ -56,7 +56,7 @@ class UserController extends Controller
         } while ($this->datastore->exists($email, $uniq));
 
         try {
-            $user = new GrazerRedisUserVO($uniq, $email, true, $this->created = microtime(true));
+            $user = new GrazerRedisUserVO($uniq, $email, true, microtime(true));
             $this->datastore->setUser($user);
 
         } catch (InvalidArgumentException $iae) {
