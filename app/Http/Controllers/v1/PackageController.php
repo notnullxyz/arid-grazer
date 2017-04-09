@@ -29,7 +29,7 @@ class PackageController extends Controller
             'dest' => 'required|between:4,128', // 128 a sane max for a generated uniq?
             'label' => 'required|string|between:6,255',
             'expire' => 'date|after:today',
-            'content' => 'required'
+            'content' => 'required|string'
         ]);
 
         $dest = $this->request->get('dest');
