@@ -42,8 +42,15 @@ class GrazerRedisService implements IGrazerRedisService
         return new Client($config);
     }
 
+    /**
+     * Check the Index for existence of an email
+     * @param $email
+     *
+     * @return bool
+     */
     public function emailExists($email) : bool
     {
+        $this->client->select($this->dbIndex);
         return $this->client->exists($email);
     }
 
@@ -56,7 +63,7 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function exists($uniq) : bool
     {
-        $this->$this->client->select($this->dbUser);
+        $this->client->select($this->dbUser);
         return $this->client->exists($uniq);
     }
 
@@ -67,7 +74,7 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function userIndexSet($email, $uniq)
     {
-        $this->$this->client->select($this->dbIndex);
+        $this->client->select($this->dbIndex);
         if (!$this->client->exists($email)) {
             $this->client->set($email, $uniq);
         } else {
@@ -78,7 +85,7 @@ class GrazerRedisService implements IGrazerRedisService
 
     public function userIndexGet($email)
     {
-        $this->$this->client->select($this->dbIndex);
+        $this->client->select($this->dbIndex);
         if ($this->client->exists($email)) {
             $this->client->get($email);
         } else {
@@ -92,6 +99,7 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function setUser(IGrazerRedisUserVO $user): void
     {
+        $this->client->select($this->dbUser);
         $uniq = $user->get()['uniq'];
         $result = $this->client->hmset($uniq, $user->get());
         if (!$result) {
@@ -105,6 +113,7 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function getUser(string $uniqKey): IGrazerRedisUserVO
     {
+        $this->client->select($this->dbUser);
         $email = $created = $uniq = $active = null;
 
         if ($this->client->exists($uniqKey)) {

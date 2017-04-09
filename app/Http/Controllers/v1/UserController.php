@@ -27,14 +27,11 @@ class UserController extends Controller
         return new Response('Not Available', 404);
     }
 
-    public function get(string $email)
+    public function get(string $uniq)
     {
-        Log::info('UserController/get for email ' . $email);
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return new Response('Email not accepted', 422);
-        }
+        Log::info('UserController/get for uniq ' . $uniq);
 
-        $cachedUser = $this->datastore->getUser($email);
+        $cachedUser = $this->datastore->getUser($uniq);
         return response()->json($cachedUser->get(), 200);
     }
 
@@ -68,6 +65,6 @@ class UserController extends Controller
             return new Response('Some error occurred in create: ' . $e->getMessage(), 500);
         }
 
-        return new Response('User Created', 201);
+        return response()->json($user->get(), 200);
     }
 }
