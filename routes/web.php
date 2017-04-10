@@ -23,14 +23,15 @@ $app->get('/', function () use ($app) {
 /**
  * User
  */
-$app->put('/user/{uniq}', $apiVersion.'\UserController@update');
-$app->get('/user/{uniq}', $apiVersion.'\UserController@get');
-$app->post('/user/{uniq}', $apiVersion.'\UserController@create');
+//$app->put('/user/{uniq}', $apiVersion.'\UserController@update');  // @todo
+$app->get('/user/{email}', $apiVersion.'\UserController@get');
+$app->post('/user', $apiVersion.'\UserController@create');
+
 
 /**
  * Package
  */
-//$app->put('');
-//$app->get();
+$app->post('/package', $apiVersion.'\PackageController@create');
+$app->get('/package/{id}', $apiVersion.'\PackageController@get');
 
 

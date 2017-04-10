@@ -20,18 +20,13 @@ parameters:
     required: true
 paths:
   /package:
-    put:
+    post:
       summary: Submit a package into the system
       description: |
         The package endpoint puts a new packaged message on to the system and
         fires off the lifecycle.
       parameters:
         - $ref: '#/parameters/ApiVersionHeader'
-        - name: dest
-          in: path
-          description: The *uniq* of the destination (the recipient)
-          required: true
-          type: string
         - name: payload
           in: body
           description: The package payload (contents).
@@ -105,9 +100,9 @@ paths:
         user's application details, including the **uniq name**'.
       parameters:
         - $ref: '#/parameters/ApiVersionHeader'
-        - name: uniq
+        - name: email
           in: path
-          description: The **uniq** of this user.
+          description: The **email** of this user.
           required: true
           type: string
       tags:
@@ -157,6 +152,13 @@ definitions:
       email:
         type: string
         description: A valid email address associated with this user
+      created:
+        type: string
+        format: date-time
+        description: Creation date set by the system
+      active:
+        type: boolean
+        description: Whether this is an active user
   UserMutationSchema:
     type: object
     properties:
@@ -172,6 +174,9 @@ definitions:
   PackageCreateSchema:
     type: object
     properties:
+      dest:
+        type: string
+        description: The *uniq* of the destination (the recipient)
       label:
         type: string
         description: The label as a simple string identifying the package.
@@ -189,6 +194,9 @@ definitions:
       origin:
         type: string
         description: The *uniq* of the sender, or origin.
+      dest:
+        type: string
+        description: The *uniq* of the receiver, or destination.
       label:
         type: string
         description: The label as a simple human-readable identifier, as supplied by origin.
