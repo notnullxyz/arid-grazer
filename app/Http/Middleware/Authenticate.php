@@ -26,7 +26,7 @@ class Authenticate
     }
 
     /**
-     * Handle an incoming request.
+     * Handle an incoming request. Prior to all routes
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
