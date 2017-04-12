@@ -12,8 +12,6 @@ namespace App\Library;
 /**
  * The actual header name for Api-Version.
  */
-use Illuminate\Http\Request;
-
 if (!defined('API_VERSION_HEADER_FIELD')) {
     define('API_VERSION_HEADER_FIELD', 'API-Version');
 }
