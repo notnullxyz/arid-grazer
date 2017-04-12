@@ -12,6 +12,8 @@ namespace App\Library;
 /**
  * The actual header name for Api-Version.
  */
+use Illuminate\Http\Request;
+
 if (!defined('API_VERSION_HEADER_FIELD')) {
     define('API_VERSION_HEADER_FIELD', 'API-Version');
 }
@@ -25,21 +27,18 @@ class ApiVersionTool
 {
 
     /**
-     * Check if the api version header is set, and if so, if it contains a valid version (and not zero) returns it.
-     * Otherwise, return zero.
+     * Check if the api version header is set, and if so, returns it, else zero is returned.
+     * This is now fastcgi/fpm safe, and does not use getallheaders()
      * @return int
      */
     public static function getApiVersionFromHeader() : int
     {
-        $headers = getallheaders();
-        if (is_array($headers)) {
-            foreach (getallheaders() as $header => $value) {
-                if (strcasecmp($header, API_VERSION_HEADER_FIELD) == 0) {
-                    return intval($value) ?? 0;
-                }
-            }
-        }
-        return 0;
+        $key = strtoupper('HTTP_'
+            . str_replace('-','_', constant('API_VERSION_HEADER_FIELD')));
+
+        return $_SERVER[$key] ?? 0;
+
+        return $version;
     }
 
     /**
