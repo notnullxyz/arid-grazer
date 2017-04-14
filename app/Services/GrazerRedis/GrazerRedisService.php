@@ -26,6 +26,7 @@ class GrazerRedisService implements IGrazerRedisService
         $this->dbPackage = env('REDIS_DB_PACKAGE', 2);
         $this->dbIndexPackage = env('REDIS_DB_INDEX_PACKAGE', 4);
         $this->dbCounter = env('REDIS_DB_COUNTER', 5);
+        $this->dbTokenStore = env('REDIS_DB_AUTH', 6);
 
         if (!defined('COUNTER_KEY_USER')) {
             define('COUNTER_KEY_USER', 'users_total_ever');
@@ -232,6 +233,34 @@ class GrazerRedisService implements IGrazerRedisService
         }
         abort(404, "The package hash $packageHash does not exist in the package index");
     }
+
+    /**
+     * Persist the token and its associated data to the datastore
+     * @param string $token
+     * @param array  $tokenData
+     */
+    public function setApiAccessTokenData(string $token, array $tokenData) {
+        $this->client->select($this->dbTokenStore);
+        if ($this->client->exists($token)) {
+            abort(409, 'Token is already present. Not sure you should ever see this error.');
+        }
+        $this->client->hmset($token, $tokenData);
+    }
+
+    /**
+     * Returns the hash set on this token, if it exists, else an empty array is returned.
+     * @param $token
+     *
+     * @return array
+     */
+    public function getApiAccessTokenData($token) : array {
+        $this->client->select($this->dbTokenStore);
+        if ($this->client->exists($token)) {
+            return $this->client->hgetall($token);
+        }
+        return [];
+    }
+
 
     /**
      * Internal function to increment a counter in the datastore.
