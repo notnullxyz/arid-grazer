@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\User;
 use Illuminate\Support\ServiceProvider;
+use Predis\Client;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -22,7 +23,7 @@ class AuthServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(Client $client)
     {
         // Here you may define how you wish users to be authenticated for your Lumen
         // application. The callback which receives the incoming request instance
@@ -35,12 +36,17 @@ class AuthServiceProvider extends ServiceProvider
 //            }
 //        });
 
+        $client->select(getenv('REDIS_DB_AUTH'));
+
+
         $this->app['auth']->viaRequest('api', function ($request) {
             $header = $request->header('Api-Token');
-            $expected = '12345abc';
-            if ($header && (strcmp($header, $expected) === 0)) {
-                return new User(); // return user where in redis....
-            }
+
+            // bringing redis in, or calling out to it?
+
+//            if ($header && check here.) {
+//                return new User(); // return user where in redis....
+//            }
 
         });
 
