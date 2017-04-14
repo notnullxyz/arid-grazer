@@ -10,15 +10,11 @@ This repository is composed of the service, producer and processor code. To part
 
 This will be populated with useful information soon.
 
-```
-#!swagger
 1. Clone Master on a tag that makes sense.
 2. Run composer install/update to get dependencies sorted out.
 3. Rename `skeleton.env` to `.env` and edit as needed (see wiki).
 4. Set up hosting environment, start-up and test with Insomnia or POSTMan or any REST client you enjoy.
 5. Stay tuned for docker version of the API.
-```
-
 
 ### Who do I talk to? ###
 
