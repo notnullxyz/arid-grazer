@@ -17,7 +17,6 @@ class PackageController extends Controller
 
     public function __construct(Request $request, GrazerRedisService $grazerRedisService, UserController $user)
     {
-        Log::info('PackageController construction.');
         $this->request = $request;
         $this->grazerRedisService = $grazerRedisService;
         $this->user = $user;
@@ -49,6 +48,7 @@ class PackageController extends Controller
         }
 
         if (!$this->grazerRedisService->exists($dest)) {
+            $this->log("non-existent uniq dest [$dest]");
             abort(410, "The uniq '$dest' is not here, and probably gone forever.");
         }
 
@@ -61,6 +61,7 @@ class PackageController extends Controller
         if (!$this->grazerRedisService->packageExists($VOHash)) {
             $this->grazerRedisService->setPackage($packageVO, $VOHash);
         } else {
+            $this->log("duplicate package hash [$VOHash]");
             abort(409,
                 "A package with this exact hash, has already been inserted in the system -" . $VOHash);
         }
@@ -79,7 +80,6 @@ class PackageController extends Controller
      */
     public function get($pHash)
     {
-        Log::info('PackageController/get for hash ' . $pHash);
         $cachedPackage = $this->grazerRedisService->getPackage($pHash);
         return response()->json($cachedPackage->get(), 200);
     }
@@ -105,5 +105,22 @@ class PackageController extends Controller
         $pkg = $pkgVO->get();
         unset($pkg['sent']);    // remove time, else hash will always be unique :(
         return md5(json_encode($pkg));
+    }
+
+    /**
+     * Generalise logging format
+     * @param string $specify
+     */
+    private function log(string $specify)
+    {
+        Log::debug(
+            sprintf( '[controller] %s [%s] %s - %s',
+                $this->request->ip(),
+                get_called_class(),
+                __FUNCTION__,
+                $specify
+            )
+        );
+
     }
 }

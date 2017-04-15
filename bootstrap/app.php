@@ -62,10 +62,12 @@ $app->singleton(
 
 $app->middleware([
     //App\Http\Middleware\VersionHeader::class
+    \App\Http\Middleware\RouteLog::class
 ]);
 
 $app->routeMiddleware([
  'auth' => App\Http\Middleware\Authenticate::class,
+// 'routelog' => \App\Http\Middleware\RouteLog::class
 ]);
 
 /*
@@ -95,7 +97,7 @@ $app->register(\App\Providers\GrazerRedisServiceProvider::class);
 |
 */
 
-$app->group(['namespace' => 'App\Http\Controllers', 'middleware' => 'auth'], function ($app) {
+$app->group(['namespace' => 'App\Http\Controllers'], function ($app) {
     require __DIR__.'/../routes/web.php';
 });
 
