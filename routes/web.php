@@ -15,23 +15,24 @@ use App\Library\ApiVersionTool;
 
 $apiVersion = 'v' . ApiVersionTool::validateAndGetApiVersionFromHeader();
 
+$requestId = uniqid('req_', true);
+
 $app->get('/', function () use ($app) {
     return $app->version();
 });
-
 
 /**
  * User
  */
 //$app->put('/user/{uniq}', $apiVersion.'\UserController@update');  // @todo
-$app->get('/user/{email}', $apiVersion.'\UserController@get');
+$app->get('/user/{email}', ['middleware' => 'auth', 'uses' => $apiVersion.'\UserController@get', 'gom' => $requestId]);
 $app->post('/user', $apiVersion.'\UserController@create');
 
 
 /**
  * Package
  */
-$app->post('/package', $apiVersion.'\PackageController@create');
-$app->get('/package/{id}', $apiVersion.'\PackageController@get');
+$app->post('/package', ['middleware' => 'auth', 'uses' => $apiVersion.'\PackageController@create']);
+$app->get('/package/{id}', ['middleware' => 'auth', 'uses' => $apiVersion.'\PackageController@get']);
 
 

@@ -27,9 +27,11 @@ class AuthServiceProvider extends ServiceProvider
         $this->app['auth']->viaRequest('api', function ($request) use ($client) {
             $header = $request->header('Api-Token');
             $tokenData = $client->getApiAccessTokenData($header);
+
             if ($tokenData && count($tokenData) && $tokenData['active']) {
                 return true;
             }
+
             return null;
         });
     }

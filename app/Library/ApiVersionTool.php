@@ -12,6 +12,9 @@ namespace App\Library;
 /**
  * The actual header name for Api-Version.
  */
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
 if (!defined('API_VERSION_HEADER_FIELD')) {
     define('API_VERSION_HEADER_FIELD', 'API-Version');
 }
@@ -64,8 +67,10 @@ class ApiVersionTool
     {
         $version = self::getApiVersionFromHeader();
         if ($version && self::isSupportedApiVersion($version)) {
+            Log::debug("[API Version] requested $version OK");
             return $version;
         } else {
+            Log::debug("[API Version] requested $version FAIL");
             header('HTTP/1.1 412 Pre-Condition Failed', true, 412);
             exit();
         }

@@ -8,43 +8,59 @@ use App\Services\GrazerRedis\IGrazerRedisUserVO;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
-use Log;
+use Illuminate\Support\Facades\Log;
 use Psr\Log\InvalidArgumentException;
-use function Sodium\randombytes_random16;
 
 class UserController extends Controller
 {
     private $req;
 
+    /**
+     * UserController constructor.
+     *
+     * @param Request            $request
+     * @param GrazerRedisService $grazerRedisService
+     */
     public function __construct(Request $request, GrazerRedisService $grazerRedisService)
     {
         $this->req = $request;
         $this->datastore = $grazerRedisService;
-        Log::info('UserController construction.');
     }
 
+    /**
+     * @param string $uniq
+     *
+     * @return Response
+     */
     public function update(string $uniq)
     {
         return new Response('Not Available', 404);
     }
 
+    /**
+     * @param string $uniq
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function get(string $uniq)
     {
-        Log::info('UserController/get for uniq ' . $uniq);
-
         $cachedUser = $this->datastore->getUser($uniq);
         return response()->json($cachedUser->get(), 200);
     }
 
+    /**
+     * @return \Illuminate\Http\JsonResponse|Response
+     */
     public function create()
     {
-        Log::info('UserController/create');
         $email = $this->req->get('email');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->log("FILTER_VALIDATE_EMAIL fail $email");
             return new Response('Email not accepted', 422);
         }
 
         if ($email && $this->datastore->emailExists($email)) {
+            $this->log("email exists $email");
             return new Response('Email already exists', 409);
         }
 
@@ -96,4 +112,21 @@ class UserController extends Controller
         return "$pre-$post";
     }
 
+
+    /**
+     * Generalise logging format
+     * @param string $specify
+     */
+    private function log(string $specify)
+    {
+        Log::debug(
+            sprintf( '[controller] %s [%s] %s - %s',
+                $this->req->ip(),
+                get_called_class(),
+                __FUNCTION__,
+                $specify
+            )
+        );
+
+    }
 }
