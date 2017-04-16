@@ -7,6 +7,7 @@ use Predis\Client;
 
 /**
  * GrazerRedisService.php
+ * This class has become a dumpster for redis abstractions. Don't add to the mess, clean up if you can.
  * Part of arid-grazer
  *
  * @author: Marlon
@@ -73,7 +74,7 @@ class GrazerRedisService implements IGrazerRedisService
      *
      * @return bool
      */
-    public function exists($uniq) : bool
+    public function uniqExists($uniq) : bool
     {
         $this->client->select($this->dbUser);
         return $this->client->exists($uniq);

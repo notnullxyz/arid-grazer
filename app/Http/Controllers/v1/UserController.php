@@ -66,7 +66,7 @@ class UserController extends Controller
 
         do {
             $uniq = $this->mkUniq();
-        } while ($this->datastore->exists($email, $uniq));
+        } while ($this->datastore->uniqExists($uniq));
 
         try {
             $user = new GrazerRedisUserVO($uniq, $email, true, microtime(true));
