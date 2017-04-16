@@ -7,6 +7,7 @@ use Predis\Client;
 
 /**
  * GrazerRedisService.php
+ * This class has become a dumpster for redis abstractions. Don't add to the mess, clean up if you can.
  * Part of arid-grazer
  *
  * @author: Marlon
@@ -73,7 +74,7 @@ class GrazerRedisService implements IGrazerRedisService
      *
      * @return bool
      */
-    public function exists($uniq) : bool
+    public function uniqExists($uniq) : bool
     {
         $this->client->select($this->dbUser);
         return $this->client->exists($uniq);
@@ -179,10 +180,10 @@ class GrazerRedisService implements IGrazerRedisService
     /**
      * @inheritDoc
      */
-    public function touchPackageTTL(int $packageId, int $ttl): void
+    public function touchPackageTTL(int $packageId, int $ttl): int
     {
         $this->client->select($this->dbPackage);
-
+        return $this->client->expire($packageId, $ttl);
     }
 
     /**
@@ -263,7 +264,7 @@ class GrazerRedisService implements IGrazerRedisService
 
 
     /**
-     * Internal function to increment a counter in the datastore.
+     * Internal function to increment a counter(key) in the datastore.
      * @param string $key The key to increment
      */
     private function countIncrement($key) : int

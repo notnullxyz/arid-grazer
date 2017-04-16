@@ -47,7 +47,7 @@ class PackageController extends Controller
             $expireSeconds = 12 * 60 * 60;  // if all else fails, we give it 12 hours to live.
         }
 
-        if (!$this->grazerRedisService->exists($dest)) {
+        if (!$this->grazerRedisService->uniqExists($dest)) {
             $this->log("non-existent uniq dest [$dest]");
             abort(410, "The uniq '$dest' is not here, and probably gone forever.");
         }

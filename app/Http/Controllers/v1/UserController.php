@@ -1,6 +1,7 @@
 <?php namespace App\Http\Controllers\v1;
 
 use App\Library\Faker;
+use App\Library\TokenToolkit;
 use App\Services\GrazerRedis\GrazerRedisService;
 use App\Services\GrazerRedis\GrazerRedisTokenVO;
 use App\Services\GrazerRedis\GrazerRedisUserVO;
@@ -66,7 +67,7 @@ class UserController extends Controller
 
         do {
             $uniq = $this->mkUniq();
-        } while ($this->datastore->exists($email, $uniq));
+        } while ($this->datastore->uniqExists($uniq));
 
         try {
             $user = new GrazerRedisUserVO($uniq, $email, true, microtime(true));
@@ -85,8 +86,7 @@ class UserController extends Controller
     }
 
     private function assignUserToken(IGrazerRedisUserVO $userVO) {
-        $NaCL = getenv('NACL') !== false ? getenv('NACL') : str_random(8);
-        $token = sha1(json_encode($userVO->get()) . strval($NaCL));
+        $token = TokenToolkit::makeToken($userVO->get());
 
         $user = $userVO->get();
         $tokenVO = new GrazerRedisTokenVO(
