@@ -15,6 +15,7 @@ use Psr\Log\InvalidArgumentException;
 class UserController extends Controller
 {
     private $req;
+    private $datastore;
 
     /**
      * UserController constructor.
@@ -55,6 +56,7 @@ class UserController extends Controller
     public function create()
     {
         $email = $this->req->get('email');
+        $token = $user = null;
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->log("FILTER_VALIDATE_EMAIL fail $email");
             return new Response('Email not accepted', 422);
@@ -85,6 +87,9 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * @todo  : this should be calling TokenController:create
+     */
     private function assignUserToken(IGrazerRedisUserVO $userVO) {
         $token = TokenToolkit::makeToken($userVO->get());
 
@@ -97,7 +102,12 @@ class UserController extends Controller
             __FUNCTION__
         );
 
-        $this->datastore->setApiAccessTokenData($token, $tokenVO->get());
+        $this->datastore->setApiAccessTokenData($token, $tokenVO);
+        $seconds = intval(env('EXPIRE_TOKEN_DEFAULT_HOURS', 336)) * 3600;   // hours to seconds.
+        $this->datastore->touchTokenTTL($token, $seconds);
+
+        TokenToolkit::notifyAndSendOTP($user['uniq'], $token);
+
         return $token;
     }
 

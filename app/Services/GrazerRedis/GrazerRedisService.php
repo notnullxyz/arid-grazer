@@ -17,7 +17,7 @@ class GrazerRedisService implements IGrazerRedisService
 {
 
     private $client;
-    private $dbIndexUser, $dbUser, $dbIndexPackage, $dbPackage, $dbCounter;
+    private $dbIndexUser, $dbUser, $dbIndexPackage, $dbPackage, $dbCounter, $dbTokenStore;
 
     public function __construct()
     {
@@ -180,10 +180,19 @@ class GrazerRedisService implements IGrazerRedisService
     /**
      * @inheritDoc
      */
-    public function touchPackageTTL(int $packageId, int $ttl): int
+    public function touchPackageTTL(int $packageId, int $ttlSeconds): int
     {
         $this->client->select($this->dbPackage);
-        return $this->client->expire($packageId, $ttl);
+        return $this->client->expire($packageId, $ttlSeconds);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function touchTokenTTL(string $keyAsToken, int $ttlSeconds): int
+    {
+        $this->client->select($this->dbTokenStore);
+        return $this->client->expire($keyAsToken, $ttlSeconds);
     }
 
     /**
@@ -240,12 +249,12 @@ class GrazerRedisService implements IGrazerRedisService
      * @param string $token
      * @param array  $tokenData
      */
-    public function setApiAccessTokenData(string $token, array $tokenData) {
+    public function setApiAccessTokenData(string $token, IGrazerRedisTokenVO $tokenData) {
         $this->client->select($this->dbTokenStore);
         if ($this->client->exists($token)) {
             abort(409, 'Token is already present. Not sure you should ever see this error.');
         }
-        $this->client->hmset($token, $tokenData);
+        $this->client->hmset($token, $tokenData->get());
     }
 
     /**

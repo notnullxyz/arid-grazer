@@ -48,7 +48,7 @@ interface IGrazerRedisService
 
 
     /**
-     * Update the storage life/expiry of a package in the system.
+     * Update the storage life/expiry of a package in the system, in seconds.
      * @param int $packageId
      * @param int $ttl
      *
@@ -56,4 +56,14 @@ interface IGrazerRedisService
      */
     public function touchPackageTTL(int $packageId, int $ttl) : int;
 
+    /**
+     * Update the TTL/lifetime of a token in the datastore, in seconds.
+     * Return 1 if set, or 0 if not found/something bad happens.
+     *
+     * @param string $keyAsToken
+     * @param int    $ttl
+     *
+     * @return int
+     */
+    public function touchTokenTTL(string $keyAsToken, int $ttl) : int;
 }
