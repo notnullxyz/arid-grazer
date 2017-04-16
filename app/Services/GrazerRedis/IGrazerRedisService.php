@@ -51,7 +51,9 @@ interface IGrazerRedisService
      * Update the storage life/expiry of a package in the system.
      * @param int $packageId
      * @param int $ttl
+     *
+     * @return int (1 if ttl was set, 0 if it did not exist or could not be set)
      */
-    public function touchPackageTTL(int $packageId, int $ttl) : void;
+    public function touchPackageTTL(int $packageId, int $ttl) : int;
 
 }

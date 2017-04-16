@@ -180,10 +180,10 @@ class GrazerRedisService implements IGrazerRedisService
     /**
      * @inheritDoc
      */
-    public function touchPackageTTL(int $packageId, int $ttl): void
+    public function touchPackageTTL(int $packageId, int $ttl): int
     {
         $this->client->select($this->dbPackage);
-
+        return $this->client->expire($packageId, $ttl);
     }
 
     /**
@@ -264,7 +264,7 @@ class GrazerRedisService implements IGrazerRedisService
 
 
     /**
-     * Internal function to increment a counter in the datastore.
+     * Internal function to increment a counter(key) in the datastore.
      * @param string $key The key to increment
      */
     private function countIncrement($key) : int
