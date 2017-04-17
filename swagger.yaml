@@ -1,8 +1,8 @@
 swagger: '2.0'
 info:
   title: Arid-Grazer API (AGAPI)
-  description: Post-Office emulating routing for packaged messages.
-  version: 1.0.0
+  description: Post-Office emulating routing for packaged messages. This document is no longer up to date.
+  version: 0.4.0
 host: notnull.xyz
 schemes:
   - http
