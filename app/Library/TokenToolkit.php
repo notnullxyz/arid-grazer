@@ -32,7 +32,30 @@ class TokenToolkit
         if (!$salt) {
             $salt = static::getSalt();
         }
-        return sha1(json_encode($userData) . strval($salt));
+        $spice = strval(uniqid(time()));
+        return sha1(json_encode($userData) . strval($salt) . $spice);
     }
 
+    /**
+     * Notify a uniq about a new token, and send with this an OTP.
+     * @param $uniq
+     * @param $token
+     */
+    public static function notifyAndSendOTP(string $uniq, string $token)
+    {
+        // @todo
+        print " - Notifying a uniq $uniq about his token $token and otp... TODO - ";
+    }
+
+    /**
+     * Generate a simple, suitable OTP.
+     * @param int $lenMin
+     * @param int $lenMax
+     *
+     * @return string
+     */
+    public static function makeSimpleOTP(int $lenMin = 4, int $lenMax = 6)
+    {
+        return bin2hex(random_bytes(rand(4,6)));
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services\GrazerRedis;
 
+use Illuminate\Support\Facades\Log;
 use Predis\Client;
 
 
@@ -17,7 +18,7 @@ class GrazerRedisService implements IGrazerRedisService
 {
 
     private $client;
-    private $dbIndexUser, $dbUser, $dbIndexPackage, $dbPackage, $dbCounter;
+    private $dbIndexUser, $dbUser, $dbIndexPackage, $dbPackage, $dbCounter, $dbTokenStore;
 
     public function __construct()
     {
@@ -180,10 +181,19 @@ class GrazerRedisService implements IGrazerRedisService
     /**
      * @inheritDoc
      */
-    public function touchPackageTTL(int $packageId, int $ttl): int
+    public function touchPackageTTL(int $packageId, int $ttlSeconds): int
     {
         $this->client->select($this->dbPackage);
-        return $this->client->expire($packageId, $ttl);
+        return $this->client->expire($packageId, $ttlSeconds);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function touchTokenTTL(string $keyAsToken, int $ttlSeconds): int
+    {
+        $this->client->select($this->dbTokenStore);
+        return $this->client->expire($keyAsToken, $ttlSeconds);
     }
 
     /**
@@ -240,12 +250,13 @@ class GrazerRedisService implements IGrazerRedisService
      * @param string $token
      * @param array  $tokenData
      */
-    public function setApiAccessTokenData(string $token, array $tokenData) {
+    public function setApiAccessTokenData(string $token, IGrazerRedisTokenVO $tokenData)
+    {
         $this->client->select($this->dbTokenStore);
         if ($this->client->exists($token)) {
             abort(409, 'Token is already present. Not sure you should ever see this error.');
         }
-        $this->client->hmset($token, $tokenData);
+        $this->client->hmset($token, $tokenData->get());
     }
 
     /**
@@ -254,7 +265,8 @@ class GrazerRedisService implements IGrazerRedisService
      *
      * @return array
      */
-    public function getApiAccessTokenData($token) : array {
+    public function getApiAccessTokenData($token) : array
+    {
         $this->client->select($this->dbTokenStore);
         if ($this->client->exists($token)) {
             return $this->client->hgetall($token);
@@ -262,6 +274,157 @@ class GrazerRedisService implements IGrazerRedisService
         return [];
     }
 
+
+    /**
+     * Activate the provided token.
+     * @param $token
+     *
+     * @return int
+     */
+    public function activateToken($token)
+    {
+        $this->client->select($this->dbTokenStore);
+        return $this->client->hset($token, 'active', 1);
+    }
+
+    /**
+     * Look up a uniq associated with the provided token.
+     * @param string $token
+     *
+     * @return string
+     */
+    public function getUniqFromToken(string $token) : string
+    {
+        $this->client->select($this->dbTokenStore);
+        if ($this->client->hexists($token, 'uniq')) {
+            $uniq = $this->client->hget($token, 'uniq');
+            return $uniq;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the otp (if available) that is set on the given token, then deletes it.
+     * @param $token
+     *
+     * @return string
+     */
+    public function getOTP($token)
+    {
+        $this->client->select($this->dbTokenStore);
+        if ($this->client->hexists($token, 'otp')) {
+            $otp = $this->client->hget($token, 'otp');
+            //$this->client->hdel($token, 'otp');
+            return $otp;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Removes a saved OTP associated with a token.
+     * This is useful for when an OTP was claimed.
+     *
+     * @param string $token
+     */
+    public function unlinkOTP(string $token)
+    {
+        $this->client->select($this->dbTokenStore);
+        if ($this->client->exists($token)) {
+            $this->client->hdel($token, ['otp']);
+        }
+    }
+
+    /**
+     * Checks if a given token is owned by a uniq.
+     * @param string $uniq
+     * @param string $token
+     *
+     * @return bool
+     */
+    public function ownsToken(string $uniq, string $token)
+    {
+        $this->client->select($this->dbTokenStore);
+        if ($this->client->sismember($uniq, $token)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Assigns a token to a uniq.
+     * @param string $uniq
+     * @param string $token
+     *
+     * @return int
+     */
+    public function giveToken(string $uniq, string $token) : int
+    {
+        $this->client->select($this->dbTokenStore);
+        return $this->client->sadd($uniq, [$token]);
+    }
+
+    /**
+     * Unlinks a token from a uniq's ownership.
+     * @param string $uniq
+     * @param string $token
+     *
+     * @return int
+     */
+    public function removeToken(string $uniq, string $token) : int
+    {
+        $this->client->select($this->dbTokenStore);
+        return $this->client->srem($uniq, $token);
+    }
+
+    /**
+     * Delete the provided key'd tokens and the tokendata.
+     * @param $token
+     */
+    public function purgeTokenKey($token)
+    {
+        $this->client->select($this->dbTokenStore);
+        $this->client->del($token);
+    }
+
+    /**
+     * Purge all owned tokens from a uniq, both historic and current.
+     * This operation is O(no of tokens).
+     *
+     * @param $uniq
+     *
+     * @return int
+     */
+    public function purgeTokens($uniq) : int
+    {
+        $this->client->select($this->dbTokenStore);
+
+        $tokens = [];
+        $tokens = $this->client->smembers($uniq);
+
+        // delete any tokens (as keys) in this db, then delete the historic relations
+        foreach ($tokens as $deletable) {
+            $result = $this->client->del($deletable);
+            Log::debug("Deleting $uniq's token: $deletable' - Result: $result");
+        }
+
+        Log::debug("Lastly, deleting $uniq's historic set'");
+        return $this->client->del($uniq);
+    }
+
+    /**
+     * Simply returns all tokens associated with the provided uniq.
+     * @param string $uniq
+     *
+     * @return array
+     */
+    public function getAllTokens(string $uniq) : array
+    {
+        $all = [];
+        $all = $this->client->smembers($uniq);
+        return $all;
+    }
 
     /**
      * Internal function to increment a counter(key) in the datastore.
@@ -272,5 +435,21 @@ class GrazerRedisService implements IGrazerRedisService
         $this->client->select($this->dbCounter);
         return intval($this->client->incr($key));
     }
+
+    /**
+     * Generalise logging format for GrazerRedisService
+     * @param string $specify
+     */
+    private function log($command, $key, $note)
+    {
+        Log::debug(
+            sprintf( '[grazerRedis] %s [%s] %s',
+                $command,
+                $key,
+                $note
+            )
+        );
+    }
+
 
 }
