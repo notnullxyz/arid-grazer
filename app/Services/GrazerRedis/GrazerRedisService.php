@@ -212,6 +212,23 @@ class GrazerRedisService implements IGrazerRedisService
     }
 
     /**
+     * Return the uniq that a package (by hash) is intended for, this would almost always be the recipient.
+     * This queries the package-index db.
+     *
+     * @param string $hash Package hash to check on.
+     *
+     * @return string
+     */
+    public function getPackageRecipient($hash) : string
+    {
+        $this->client->select($this->dbIndexPackage);
+        if ($this->packageExists($hash)) {
+            return $this->client->get($hash);
+        }
+        abort(404, "Could not find that package, let one a recipient.', $hash");
+    }
+
+    /**
      * Set a package index entry, as package id/hash -> uniq
      *
      * @param $uniqDest Uniq of the receiver of this package.
