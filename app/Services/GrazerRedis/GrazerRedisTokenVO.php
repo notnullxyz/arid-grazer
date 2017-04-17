@@ -24,6 +24,7 @@ final class GrazerRedisTokenVO implements IGrazerRedisTokenVo
     private $created;
     private $active;
     private $note;
+    private $otp;
 
     /**
      * GrazerRedisTokenVO constructor.
@@ -34,13 +35,15 @@ final class GrazerRedisTokenVO implements IGrazerRedisTokenVo
      * @param null   $created
      * @param null   $note A free field to leave 'last notes' for any auditing reasons, use __FUNCTION__ when in doubt
      */
-    public function __construct(string $uniq, string $email, int $active = 0, $created = null, $note = null)
+    public function __construct(string $uniq, string $email, int $active = 0, $created = null,
+        $note = null, $otp = null)
     {
         $this->uniq = $uniq;
         $this->email = $email;
         $this->active = $active;
         $this->created = $created;
         $this->note = $note;
+        $this->otp = $otp;
     }
 
     /**
@@ -54,7 +57,8 @@ final class GrazerRedisTokenVO implements IGrazerRedisTokenVo
             'uniq' => $this->uniq,
             'created' => $this->created,
             'active' => $this->active,
-            'note' => $this->note
+            'note' => $this->note,
+            'otp' => $this->otp
         ];
     }
 

@@ -40,7 +40,7 @@ $app->get('/package/{id}', ['middleware' => 'auth', 'uses' => $apiVersion.'\Pack
  * Token
  */
 $app->post('/token', $apiVersion.'\TokenController@create');
-$app->get('/verify/', ['middleware' => 'auth', 'uses' => $apiVersion.'\TokenController@verify']);
+$app->get('/token/{otp}', $apiVersion.'\TokenController@verify');
 
 
 // @todo temp notes for token endpoints.

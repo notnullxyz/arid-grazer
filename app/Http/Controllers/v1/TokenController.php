@@ -34,6 +34,11 @@ class TokenController extends Controller
     }
 
 
+    /**
+     * Creates a new token for the uniq.
+     * At this point it is not replaced or verified, just a notification and otp is generated.
+     * @return Response
+     */
     public function create()
     {
         $this->validate($this->request,
@@ -52,28 +57,83 @@ class TokenController extends Controller
                 $user['email'],
                 0,
                 microtime(true),
-                'TokenController Created'
+                'TokenController Created',
+                TokenToolkit::makeSimpleOTP()
             );
 
             $this->datastore->setApiAccessTokenData($newToken, $tokenVO);
             $seconds = intval(env('EXPIRE_TOKEN_DEFAULT_HOURS', 336)) * 3600;   // hours to seconds.
             $this->datastore->touchTokenTTL($newToken, $seconds);
 
-            // expire previous tokens for this uniq @todo - how the fek
-
+            $this->datastore->giveToken($uniq, $newToken);
 
             TokenToolkit::notifyAndSendOTP($uniq, $newToken);
+
             return new Response('Token created', 202);
         } else if(!$uniqExists) {
             return new Response('That uniq is non-existent', 404);
         } else {
-            // @todo - log this - it should not occur.
+            $this->log('Something fishy during create()');
             return new Response('Something fishy going on with token request and creation...', 500);
         }
     }
 
-    public function verify()
+    /**
+     * Accepts an OTP, and verifies it against the provided (header) api token to verify.
+     * If the OTP matches the token, the token is activate, the otp destroyed and all other tokens purged.
+     *
+     * @param string $otp
+     *
+     * @return Response
+     */
+    public function verify(string $otp)
     {
+        if (!$otp) {
+            return new Response('OTP Required', 400);
+        }
+
+        $token = $this->request->header('API-TOKEN');
+        $stored = $this->datastore->getOTP($token);
+        if (!$stored) {
+            return new Response('Could not find a cached OTP this time', 404);
+        }
+        $uniq = $this->datastore->getUniqFromToken($token);
+
+        if (strcmp($otp, $stored) === 0) {
+            $tokens = $this->datastore->getAllTokens($uniq);
+            $tokenAtKey = array_search($token, $tokens, true);
+            unset($tokens[$tokenAtKey]); // keep the current request token, as it becomes the new current.
+
+            foreach($tokens as $deletable) {
+                $this->datastore->removeToken($uniq, $deletable);   // remove all but current from history set
+                $this->datastore->purgeTokenKey($deletable);
+            }
+
+            // Remove the OTP fielfd from the token hash, activate it.
+            $this->datastore->unlinkOTP($token);
+            $this->datastore->activateToken($token);
+
+            return new Response('Token Verified', 204);
+        } else {
+            return new Response('Token Mismatch', 400);
+        }
+
+    }
+
+    /**
+     * Generalise logging format
+     * @param string $specify
+     */
+    private function log(string $specify)
+    {
+        Log::debug(
+            sprintf( '[controller] %s [%s] %s - %s',
+                $this->req->ip(),
+                get_called_class(),
+                __FUNCTION__,
+                $specify
+            )
+        );
 
     }
 

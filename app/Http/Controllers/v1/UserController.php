@@ -99,12 +99,14 @@ class UserController extends Controller
             $user['email'],
             0,
             microtime(true),
-            __FUNCTION__
+            get_called_class() . '::'. __FUNCTION__,
+            TokenToolkit::makeSimpleOTP()
         );
 
         $this->datastore->setApiAccessTokenData($token, $tokenVO);
         $seconds = intval(env('EXPIRE_TOKEN_DEFAULT_HOURS', 336)) * 3600;   // hours to seconds.
         $this->datastore->touchTokenTTL($token, $seconds);
+        $this->datastore->giveToken($user['uniq'], $token);
 
         TokenToolkit::notifyAndSendOTP($user['uniq'], $token);
 

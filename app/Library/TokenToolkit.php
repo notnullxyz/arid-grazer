@@ -47,4 +47,15 @@ class TokenToolkit
         print " - Notifying a uniq $uniq about his token $token and otp... TODO - ";
     }
 
+    /**
+     * Generate a simple, suitable OTP.
+     * @param int $lenMin
+     * @param int $lenMax
+     *
+     * @return string
+     */
+    public static function makeSimpleOTP(int $lenMin = 4, int $lenMax = 6)
+    {
+        return bin2hex(random_bytes(rand(4,6)));
+    }
 }
