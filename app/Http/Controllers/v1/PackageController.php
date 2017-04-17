@@ -7,6 +7,7 @@ use App\Services\GrazerRedis\GrazerRedisPackageVO;
 use App\Services\GrazerRedis\GrazerRedisService;
 use App\Services\GrazerRedis\IGrazerRedisPackageVO;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Log;
 
 class PackageController extends Controller
@@ -36,9 +37,7 @@ class PackageController extends Controller
         $expire = $this->request->get('expire');
         $content = $this->request->get('content');
 
-        // TODO Get the origin from the context of the authenticated uniq!
-        $origin = 'HardCodedOrigin-999';
-        // TODO Get the origin from the context of the authenticated uniq!
+        $origin = (string)$this->grazerRedisService->getUniqFromToken($this->request->header('API-TOKEN'));
 
         // If no expiry was requested, we have no choice but to use our default.
         if (!$expire) {
@@ -80,8 +79,15 @@ class PackageController extends Controller
      */
     public function get($pHash)
     {
-        $cachedPackage = $this->grazerRedisService->getPackage($pHash);
-        return response()->json($cachedPackage->get(), 200);
+        $receiverUniq = $this->grazerRedisService->getUniqFromToken($this->request->header('API-TOKEN'));
+
+        // compare the owner(recipient of the stored package at this hash, with the requesting token's uniq)
+        if (strcmp($this->grazerRedisService->getPackageRecipient($pHash), $receiverUniq) === 0) {
+            $cachedPackage = $this->grazerRedisService->getPackage($pHash);
+            return response()->json($cachedPackage->get(), 200);
+        } else {
+            return new Response('Forbidden (resource does not belong to you)', 403);
+        }
     }
 
     /**
