@@ -1,6 +1,9 @@
 # ARID-GRAZER #
+API for messaging. Send packages between users (known as uniq's) anonymously. Payloads can be anything, from chat messages to game-server payloads.
 
-Project code-name "Arid-Grazer" is an API to a post-office emulating service that allows clients to distribute packages (messages) on a drop-and-go basis, using nothing but their **uniq**(unique, system generated citizen names) identifiers.
+Any external consumer would be useful for notifications, etc, but is not needed.
+
+Created this for an internal game server project, but it is open for extension :)
 
 ### What is this repository for? ###
 
