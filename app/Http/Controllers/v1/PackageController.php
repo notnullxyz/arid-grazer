@@ -7,6 +7,7 @@ use App\Services\GrazerRedis\GrazerRedisPackageVO;
 use App\Services\GrazerRedis\GrazerRedisService;
 use App\Services\GrazerRedis\IGrazerRedisPackageVO;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Log;
 
 class PackageController extends Controller
@@ -17,7 +18,6 @@ class PackageController extends Controller
 
     public function __construct(Request $request, GrazerRedisService $grazerRedisService, UserController $user)
     {
-        Log::info('PackageController construction.');
         $this->request = $request;
         $this->grazerRedisService = $grazerRedisService;
         $this->user = $user;
@@ -37,9 +37,7 @@ class PackageController extends Controller
         $expire = $this->request->get('expire');
         $content = $this->request->get('content');
 
-        // TODO Get the origin from the context of the authenticated uniq!
-        $origin = 'HardCodedOrigin-999';
-        // TODO Get the origin from the context of the authenticated uniq!
+        $origin = (string)$this->grazerRedisService->getUniqFromToken($this->request->header('API-TOKEN'));
 
         // If no expiry was requested, we have no choice but to use our default.
         if (!$expire) {
@@ -48,7 +46,8 @@ class PackageController extends Controller
             $expireSeconds = 12 * 60 * 60;  // if all else fails, we give it 12 hours to live.
         }
 
-        if (!$this->grazerRedisService->exists($dest)) {
+        if (!$this->grazerRedisService->uniqExists($dest)) {
+            $this->log("non-existent uniq dest [$dest]");
             abort(410, "The uniq '$dest' is not here, and probably gone forever.");
         }
 
@@ -61,6 +60,7 @@ class PackageController extends Controller
         if (!$this->grazerRedisService->packageExists($VOHash)) {
             $this->grazerRedisService->setPackage($packageVO, $VOHash);
         } else {
+            $this->log("duplicate package hash [$VOHash]");
             abort(409,
                 "A package with this exact hash, has already been inserted in the system -" . $VOHash);
         }
@@ -79,9 +79,15 @@ class PackageController extends Controller
      */
     public function get($pHash)
     {
-        Log::info('PackageController/get for hash ' . $pHash);
-        $cachedPackage = $this->grazerRedisService->getPackage($pHash);
-        return response()->json($cachedPackage->get(), 200);
+        $receiverUniq = $this->grazerRedisService->getUniqFromToken($this->request->header('API-TOKEN'));
+
+        // compare the owner(recipient of the stored package at this hash, with the requesting token's uniq)
+        if (strcmp($this->grazerRedisService->getPackageRecipient($pHash), $receiverUniq) === 0) {
+            $cachedPackage = $this->grazerRedisService->getPackage($pHash);
+            return response()->json($cachedPackage->get(), 200);
+        } else {
+            return new Response('Forbidden (resource does not belong to you)', 403);
+        }
     }
 
     /**
@@ -105,5 +111,21 @@ class PackageController extends Controller
         $pkg = $pkgVO->get();
         unset($pkg['sent']);    // remove time, else hash will always be unique :(
         return md5(json_encode($pkg));
+    }
+
+    /**
+     * Generalise logging format
+     * @param string $specify
+     */
+    private function log(string $specify)
+    {
+        Log::debug(
+            sprintf( '[controller] %s [%s] %s - %s',
+                $this->request->ip(),
+                get_called_class(),
+                __FUNCTION__,
+                $specify
+            )
+        );
     }
 }

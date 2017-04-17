@@ -1,6 +1,7 @@
 <?php namespace App\Http\Controllers\v1;
 
 use App\Library\Faker;
+use App\Library\TokenToolkit;
 use App\Services\GrazerRedis\GrazerRedisService;
 use App\Services\GrazerRedis\GrazerRedisTokenVO;
 use App\Services\GrazerRedis\GrazerRedisUserVO;
@@ -8,49 +9,67 @@ use App\Services\GrazerRedis\IGrazerRedisUserVO;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
-use Log;
+use Illuminate\Support\Facades\Log;
 use Psr\Log\InvalidArgumentException;
-use function Sodium\randombytes_random16;
 
 class UserController extends Controller
 {
     private $req;
+    private $datastore;
 
+    /**
+     * UserController constructor.
+     *
+     * @param Request            $request
+     * @param GrazerRedisService $grazerRedisService
+     */
     public function __construct(Request $request, GrazerRedisService $grazerRedisService)
     {
         $this->req = $request;
         $this->datastore = $grazerRedisService;
-        Log::info('UserController construction.');
     }
 
+    /**
+     * @param string $uniq
+     *
+     * @return Response
+     */
     public function update(string $uniq)
     {
         return new Response('Not Available', 404);
     }
 
+    /**
+     * @param string $uniq
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function get(string $uniq)
     {
-        Log::info('UserController/get for uniq ' . $uniq);
-
         $cachedUser = $this->datastore->getUser($uniq);
         return response()->json($cachedUser->get(), 200);
     }
 
+    /**
+     * @return \Illuminate\Http\JsonResponse|Response
+     */
     public function create()
     {
-        Log::info('UserController/create');
         $email = $this->req->get('email');
+        $token = $user = null;
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->log("FILTER_VALIDATE_EMAIL fail $email");
             return new Response('Email not accepted', 422);
         }
 
         if ($email && $this->datastore->emailExists($email)) {
+            $this->log("email exists $email");
             return new Response('Email already exists', 409);
         }
 
         do {
             $uniq = $this->mkUniq();
-        } while ($this->datastore->exists($email, $uniq));
+        } while ($this->datastore->uniqExists($uniq));
 
         try {
             $user = new GrazerRedisUserVO($uniq, $email, true, microtime(true));
@@ -68,9 +87,11 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * @todo  : this should be calling TokenController:create
+     */
     private function assignUserToken(IGrazerRedisUserVO $userVO) {
-        $NaCL = getenv('NACL') !== false ? getenv('NACL') : str_random(8);
-        $token = sha1(json_encode($userVO->get()) . strval($NaCL));
+        $token = TokenToolkit::makeToken($userVO->get());
 
         $user = $userVO->get();
         $tokenVO = new GrazerRedisTokenVO(
@@ -78,10 +99,17 @@ class UserController extends Controller
             $user['email'],
             0,
             microtime(true),
-            __FUNCTION__
+            get_called_class() . '::'. __FUNCTION__,
+            TokenToolkit::makeSimpleOTP()
         );
 
-        $this->datastore->setApiAccessTokenData($token, $tokenVO->get());
+        $this->datastore->setApiAccessTokenData($token, $tokenVO);
+        $seconds = intval(env('EXPIRE_TOKEN_DEFAULT_HOURS', 336)) * 3600;   // hours to seconds.
+        $this->datastore->touchTokenTTL($token, $seconds);
+        $this->datastore->giveToken($user['uniq'], $token);
+
+        TokenToolkit::notifyAndSendOTP($user['uniq'], $token);
+
         return $token;
     }
 
@@ -96,4 +124,21 @@ class UserController extends Controller
         return "$pre-$post";
     }
 
+
+    /**
+     * Generalise logging format
+     * @param string $specify
+     */
+    private function log(string $specify)
+    {
+        Log::debug(
+            sprintf( '[controller] %s [%s] %s - %s',
+                $this->req->ip(),
+                get_called_class(),
+                __FUNCTION__,
+                $specify
+            )
+        );
+
+    }
 }

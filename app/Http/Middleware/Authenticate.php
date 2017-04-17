@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
+use Illuminate\Support\Facades\Log;
 
 class Authenticate
 {
@@ -35,10 +36,17 @@ class Authenticate
      */
     public function handle($request, Closure $next, $guard = null)
     {
+        $ip = $request->ip();
+        $url = $request->url();
+        $method = $request->method();
+
+        $log = "[auth-mw] {$ip} | {$method} {$url}";
+
         if ($this->auth->guard($guard)->guest()) {
+            Log::info($log . " | auth: fail");
             return response('Unauthorized.', 401);
         }
-
+        Log::info($log . " | auth: ok");
         return $next($request);
     }
 }
