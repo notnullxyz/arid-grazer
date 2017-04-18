@@ -1,3 +1,5 @@
+# MIGRATED TO https://github.com/notnullxyz/arid-grazer 18 APRIL 2017 #
+
 # ARID-GRAZER #
 API for messaging. Send packages between users (known as uniq's) anonymously. Payloads can be anything, from chat messages to game-server payloads.
 
