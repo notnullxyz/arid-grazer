@@ -9,6 +9,8 @@ use Predis\Client;
 /**
  * GrazerRedisService.php
  * This class has become a dumpster for redis abstractions. Don't add to the mess, clean up if you can.
+ * @todo - specialise a bit.
+ *
  * Part of arid-grazer
  *
  * @author: Marlon

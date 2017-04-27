@@ -67,7 +67,6 @@ class ApiVersionTool
     {
         $version = self::getApiVersionFromHeader();
         if ($version && self::isSupportedApiVersion($version)) {
-            Log::debug("[API Version] requested $version OK");
             return $version;
         } else {
             Log::debug("[API Version] requested $version FAIL");
