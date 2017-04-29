@@ -18,6 +18,7 @@ namespace App\Library;
  */
 class TokenToolkit
 {
+    const TOKEN_MAIL_SUBJECT = 'Arid-Grazer Token Verification';
 
     /**
      * Gets the configured, or if not set, random, string of salt.
@@ -37,14 +38,40 @@ class TokenToolkit
     }
 
     /**
-     * Notify a uniq about a new token, and send with this an OTP.
+     * Notify a uniq about a new token, and send with this an OTP. A false return value means something was not kosher.
+     * On success, the email message string is returned.
+     *
      * @param $uniq
      * @param $token
+     * @param $email
+     * @param $otp
+     *
+     * @return bool
+     *
+     * @throws \ErrorException
      */
-    public static function notifyAndSendOTP(string $uniq, string $token)
+    public static function notifyAndSendOTP(string $uniq, string $token, string $email, $otp)
     {
-        // @todo
-        print " - Notifying a uniq $uniq about his token $token and otp... TODO - ";
+        $from = getenv('MAIL_FROM');
+        if (!$from) {
+            return false;
+        }
+
+        $to      = $email;
+        $subject = static::TOKEN_MAIL_SUBJECT;
+        $headers = "From: $from" . "\r\n" .
+            "Reply-To: $from" . "\r\n" .
+            'X-Mailer: Arid-Grazer-PHP/' . phpversion();
+
+        $message = sprintf( 'A client on the Arid-Grazer system, claiming to be uniq "%s", actuated the 
+            create of a new token [%s]. To enable this token, and replace all previous tokens, fire off a verification
+            with the otp "%s"',
+            $uniq,
+            $token,
+            $otp
+        );
+
+        mail($to, $subject, $message, $headers);
     }
 
     /**
