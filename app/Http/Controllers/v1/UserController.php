@@ -41,21 +41,16 @@ class UserController extends Controller
     }
 
     /**
-     * Get a user by it's uniq, only allowed to get the uniq you're authenticated for.
-     * @param string $uniq
+     * Get user data - only allowed to get the uniq you're authenticated for.
      *
      * @return
      */
-    public function get(string $uniq)
+    public function get()
     {
-        $realUniq = $this->datastore->getUniqFromToken($this->req->header('API-TOKEN'));
-
-        if (strcmp($realUniq, $uniq) === 0) {
-            $cachedUser = $this->datastore->getUser($uniq);
-            return response()->json($cachedUser->get(), 200);
-        }
-
-        return new Response('You are not entitled to snooping', 403);
+        $token = $this->req->header('API-TOKEN');
+        $realUniq = $this->datastore->getUniqFromToken($token);
+        $cachedUser = $this->datastore->getUser($realUniq);
+        return response()->json($cachedUser->get(), 200);
     }
 
     /**

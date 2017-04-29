@@ -134,7 +134,7 @@ class GrazerRedisService implements IGrazerRedisService
         $this->client->select($this->dbUser);
         $email = $created = $uniq = $active = null;
 
-        if ($this->client->exists($uniqKey)) {
+        if ($this->client->exists($uniqKey) && $uniqKey !== '') {
             if (!extract($this->client->hgetall($uniqKey))) {
                 abort(500, 'Something went rotten while getting user hash');
             }
@@ -310,9 +310,9 @@ class GrazerRedisService implements IGrazerRedisService
      * Look up a uniq associated with the provided token.
      * @param string $token
      *
-     * @return string
+     * @return string|null
      */
-    public function getUniqFromToken(string $token) : string
+    public function getUniqFromToken(string $token)
     {
         $this->client->select($this->dbTokenStore);
         if ($this->client->hexists($token, 'uniq')) {
