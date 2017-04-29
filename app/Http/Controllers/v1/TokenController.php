@@ -67,7 +67,8 @@ class TokenController extends Controller
 
             $this->datastore->giveToken($uniq, $newToken);
 
-            TokenToolkit::notifyAndSendOTP($uniq, $newToken);
+            $this->log('notifyAndSendOTP response: ' .
+                strval(TokenToolkit::notifyAndSendOTP($uniq, $newToken, $user['email'])));
 
             return new Response('Token created', 202);
         } else if(!$uniqExists) {

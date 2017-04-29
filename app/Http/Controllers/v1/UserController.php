@@ -64,7 +64,7 @@ class UserController extends Controller
     public function create()
     {
         $email = $this->req->get('email');
-        $token = $user = null;
+        $user = null;
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->log("FILTER_VALIDATE_EMAIL fail $email");
             return new Response('Email not accepted', 422);
@@ -83,15 +83,14 @@ class UserController extends Controller
             $user = new GrazerRedisUserVO($uniq, $email, true, microtime(true));
             $this->datastore->setUser($user);
             $token = $this->assignUserToken($user);
+            $userResponse = $user->get();
+            $userResponse['token'] = $token;
+            return response()->json($userResponse, 200);
 
         } catch (InvalidArgumentException $iae) {
             return new Response('Provided parameters were not acceptable', 422);
         } catch (\Exception $e) {
             return new Response('Some unhandled exception occurred in create: ' . $e->getMessage(), 500);
-        } finally {
-            $userResponse = $user->get();
-            $userResponse['token'] = $token;
-            return response()->json($userResponse, 200);
         }
     }
 
@@ -102,13 +101,14 @@ class UserController extends Controller
         $token = TokenToolkit::makeToken($userVO->get());
 
         $user = $userVO->get();
+        $otp = TokenToolkit::makeSimpleOTP();
         $tokenVO = new GrazerRedisTokenVO(
             $user['uniq'],
             $user['email'],
             0,
             microtime(true),
             get_called_class() . '::'. __FUNCTION__,
-            TokenToolkit::makeSimpleOTP()
+            $otp
         );
 
         $this->datastore->setApiAccessTokenData($token, $tokenVO);
@@ -116,7 +116,16 @@ class UserController extends Controller
         $this->datastore->touchTokenTTL($token, $seconds);
         $this->datastore->giveToken($user['uniq'], $token);
 
-        TokenToolkit::notifyAndSendOTP($user['uniq'], $token);
+        try {
+
+            // useful for development, so debug only.
+            Log::Debug("Hello Developer: Assigned token '$token' and otp '$otp' to user " . $user['uniq']);
+
+            // Catching issues happening during mailing, no need to bring the whole process to a standstill.
+            TokenToolkit::notifyAndSendOTP($user['uniq'], $token, $user['email'], $otp);
+        } catch (\ErrorException $e) {
+            Log::warning('TokenToolkit::notifyAndSendOTP had a panic attack: ' . $e->getMessage());
+        }
 
         return $token;
     }
@@ -134,7 +143,7 @@ class UserController extends Controller
 
 
     /**
-     * Generalise logging format
+     * Generalise logging format - Debugging only for dev.
      * @param string $specify
      */
     private function log(string $specify)
