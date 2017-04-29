@@ -48,7 +48,6 @@ class UserController extends Controller
      */
     public function get(string $uniq)
     {
-        print "WHAT?";
         $realUniq = $this->datastore->getUniqFromToken($this->req->header('API-TOKEN'));
 
         if (strcmp($realUniq, $uniq) === 0) {
