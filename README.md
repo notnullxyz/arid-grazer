@@ -1,3 +1,7 @@
+# MIGRATED TO https://github.com/notnullxyz/arid-grazer 18 APRIL 2017 #
+
+This project is now opensourced, and have been moved to https://github.com/notnullxyz/arid-grazer
+
 # ARID-GRAZER #
 API for messaging. Send packages between users (known as uniq's) anonymously. Payloads can be anything, from chat messages to game-server payloads.
 
