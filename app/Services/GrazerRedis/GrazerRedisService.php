@@ -352,7 +352,6 @@ class GrazerRedisService implements IGrazerRedisService
         $this->client->select($this->dbTokenStore);
         if ($this->client->hexists($token, 'otp')) {
             $otp = $this->client->hget($token, 'otp');
-            //$this->client->hdel($token, 'otp');
             return $otp;
         } else {
             return null;
@@ -437,7 +436,6 @@ class GrazerRedisService implements IGrazerRedisService
     {
         $this->client->select($this->dbTokenStore);
 
-        $tokens = [];
         $tokens = $this->client->smembers($uniq);
 
         // delete any tokens (as keys) in this db, then delete the historic relations
@@ -458,7 +456,6 @@ class GrazerRedisService implements IGrazerRedisService
      */
     public function getAllTokens(string $uniq) : array
     {
-        $all = [];
         $all = $this->client->smembers($uniq);
         return $all;
     }

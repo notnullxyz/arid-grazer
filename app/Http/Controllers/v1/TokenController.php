@@ -89,11 +89,9 @@ class TokenController extends Controller
                 strval(TokenToolkit::notifyAndSendOTP($uniq, $newToken, $user['email'])));
 
             return new Response('Token created', 202);
-        } else if(!$uniqExists) {
-            return new Response('That uniq is non-existent', 404);
+
         } else {
-            $this->log('Something fishy during create()');
-            return new Response('Something fishy going on with token request and creation...', 500);
+            return new Response('That uniq is non-existent', 404);
         }
     }
 

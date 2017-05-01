@@ -31,6 +31,7 @@ use Log;
 class PackageController extends Controller
 {
 
+    const HOUR = 60*60;
     private $request;
     private $grazerRedisService;
 
@@ -57,16 +58,16 @@ class PackageController extends Controller
 
         $origin = (string)$this->grazerRedisService->getUniqFromToken($this->request->header('API-TOKEN'));
 
-        // If no expiry was requested, we have no choice but to use our default.
-        if (!$expire) {
-            $expireSeconds = env('EXPIRE_PACKAGE_DEFAULT_HOURS', 24) * 60 * 60; // hour->sec
-        } else {
-            $expireSeconds = 12 * 60 * 60;  // if all else fails, we give it 12 hours to live.
-        }
-
         if (!$this->grazerRedisService->uniqExists($dest)) {
             $this->log("non-existent uniq dest [$dest]");
             abort(410, "The uniq '$dest' is not here, and probably gone forever.");
+        }
+
+        // If expiry not requested as part of package meta, fallback to our own.
+        if (!$expire) {
+            $expireSeconds = env('EXPIRE_PACKAGE_DEFAULT_HOURS', 24) * static::HOUR;    // hour -> sec
+        } else {
+            $expireSeconds = 12 * static::HOUR; // This means 12 hours
         }
 
         $packageVO = new GrazerRedisPackageVO($origin, $dest, $label, microtime(true), $expireSeconds,
@@ -79,6 +80,7 @@ class PackageController extends Controller
             $this->grazerRedisService->setPackage($packageVO, $VOHash);
         } else {
             $this->log("duplicate package hash [$VOHash]");
+
             abort(409,
                 "A package with this exact hash, has already been inserted in the system -" . $VOHash);
         }
@@ -109,16 +111,6 @@ class PackageController extends Controller
     }
 
     /**
-     * This expires a package and purges it from the system.
-     *
-     * @param int $pId Package ID
-     */
-    private function expire($pId)
-    {
-
-    }
-
-    /**
      * Generate a hash for a package, for identity or other uses.
      * @param IGrazerRedisPackageVO $pkgVO
      *
@@ -127,7 +119,7 @@ class PackageController extends Controller
     private function mkPkgHash(IGrazerRedisPackageVO $pkgVO) : string
     {
         $pkg = $pkgVO->get();
-        unset($pkg['sent']);    // remove time, else hash will always be unique :(
+        unset($pkg['sent']);    // remove time field, or this hash will just always be unique.
         return md5(json_encode($pkg));
     }
 
