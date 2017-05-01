@@ -68,7 +68,6 @@ class TokenController extends Controller
 
         if ($uniqExists) {
             $user = $this->datastore->getUser($uniq)->get();
-            dd($user);
             $newToken = TokenToolkit::makeToken($user);
 
             $tokenVO = new GrazerRedisTokenVO(
