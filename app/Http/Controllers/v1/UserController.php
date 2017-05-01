@@ -36,8 +36,23 @@ class UserController extends Controller
      */
     public function update(string $uniq)
     {
-        // Do not skip auth here ;)
-        return new Response('Not Available', 404);
+        $user = $this->datastore->getUser($uniq);
+        $email = $this->req->get('email');
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->log("FILTER_VALIDATE_EMAIL fail $email");
+            return new Response('Email not accepted', 422);
+        }
+        
+        if ($email && $this->datastore->emailExists($email)) {
+            $this->log("email exists $email");
+            return new Response('Email already exists', 409);
+        }
+
+        $updateUser = $this->datastore->updateUser($user, $email);
+
+        return response()->json($updateUser->get(), 200);
+
     }
 
     /**
