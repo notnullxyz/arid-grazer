@@ -25,6 +25,7 @@ $app->get('/', function () use ($app) {
 //$app->put('/user/{uniq}', $apiVersion.'\UserController@update');  // @todo
 $app->get('/user', ['middleware' => 'auth', 'uses' => $apiVersion.'\UserController@get']);
 $app->post('/user', $apiVersion.'\UserController@create');
+$app->put('/user/{uniq}', ['middleware' => 'auth', 'uses' => $apiVersion.'\UserController@update']);
 
 
 /**

@@ -23,6 +23,7 @@ final class GrazerRedisUserVO implements IGrazerRedisUserVO
     private $email;
     private $created;
     private $active;
+    private $updated;
 
     /**
      * GrazerRedisUser constructor.
@@ -31,12 +32,13 @@ final class GrazerRedisUserVO implements IGrazerRedisUserVO
      * @param string $email
      * @param bool $active
      */
-    public function __construct(string $uniq, string $email, bool $active = true, $created = null)
+    public function __construct(string $uniq, string $email, bool $active = true, $created = null, $updated = null)
     {
         $this->uniq = $uniq;
         $this->email = $email;
         $this->active = $active;
         $this->created = $created;
+        $this->updated = $updated;
     }
 
     /**
@@ -49,6 +51,7 @@ final class GrazerRedisUserVO implements IGrazerRedisUserVO
             'email' => $this->email,
             'uniq' => $this->uniq,
             'created' => $this->created,
+            'updated' => $this->updated,
             'active' => $this->active
         ];
     }

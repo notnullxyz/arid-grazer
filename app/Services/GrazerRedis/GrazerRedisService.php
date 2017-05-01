@@ -147,6 +147,26 @@ class GrazerRedisService implements IGrazerRedisService
     /**
      * @inheritDoc
      */
+    public function updateUser(IGrazerRedisUserVO $user, $email): IGrazerRedisUserVO
+    {   
+        
+        $revisionUser = $user->get();
+
+        $this->client->select($this->dbUser);
+        $uniq = $revisionUser['uniq'];
+
+        $user = new GrazerRedisUserVO($uniq, $email, $revisionUser['active'], $revisionUser['created'], microtime(true));
+
+        $result = $this->client->hmset($uniq, $user->get());
+        if (!$result) {
+            abort(500, 'Something went rotten while updating hash');
+        }
+        return $user;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getUser(string $uniqKey): IGrazerRedisUserVO
     {
         $this->client->select($this->dbUser);
