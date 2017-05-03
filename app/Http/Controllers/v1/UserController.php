@@ -30,6 +30,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Psr\Log\InvalidArgumentException;
+use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
@@ -55,23 +56,13 @@ class UserController extends Controller
      */
     public function update(string $uniq)
     {
+
         $user = $this->datastore->getUser($uniq);
+        $this->validate($this->req, ['email' => 'bail|required|email|email_unique']);
         $email = $this->req->get('email');
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->log("FILTER_VALIDATE_EMAIL fail $email");
-            return new Response('Email not accepted', 422);
-        }
-        
-        if ($email && $this->datastore->emailExists($email)) {
-            $this->log("email exists $email");
-            return new Response('Email already exists', 409);
-        }
-
         $updateUser = $this->datastore->updateUser($user, $email);
 
         return response()->json($updateUser->get(), 200);
-
     }
 
     /**
