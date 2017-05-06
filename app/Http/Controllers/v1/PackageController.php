@@ -95,7 +95,8 @@ class PackageController extends Controller
     /**
      * Retrieves a package from the system by its hash.
      *
-     * @param int $pId Package hash
+     * @param string $pId Package hash
+     * @return \Illuminate\Http\JsonResponse|Response
      */
     public function get($pHash)
     {
@@ -108,6 +109,22 @@ class PackageController extends Controller
         } else {
             return new Response('Forbidden (resource does not belong to you)', 403);
         }
+    }
+
+    /**
+     * Gets all packages destined for the current token.
+     * The response contains the package hashes, with subkeys for label, origin and expiry hours.
+     */
+    public function all()
+    {
+        $receiverUniq = $this->grazerRedisService->getUniqFromToken($this->request->header('API-TOKEN'));
+        $packageCrate = $this->grazerRedisService->getAllPackageLabelsForUniq($receiverUniq);
+        if (count($packageCrate)) {
+            $x = array('packages_pending' => $packageCrate);
+            return response()->json($x, 200);
+        }
+        return new Response('The package crate just did not work out so well. Please report this.', 500);
+
     }
 
     /**
