@@ -27,8 +27,6 @@ use Predis\Client;
 /**
  * GrazerRedisService.php
  * This class has become a dumpster for redis abstractions. Don't add to the mess, clean up if you can.
- * @todo - specialise a bit.
- *
  * Part of arid-grazer
  *
  * @author: Marlon
@@ -38,7 +36,7 @@ class GrazerRedisService implements IGrazerRedisService
 {
 
     private $client;
-    private $dbIndexUser, $dbUser, $dbIndexPackage, $dbPackage, $dbCounter, $dbTokenStore;
+    private $dbIndexUser, $dbUser, $dbIndexPackage, $dbPackage, $dbCounter, $dbTokenStore, $dbUniqPackageLink;
 
     public function __construct()
     {
@@ -46,6 +44,7 @@ class GrazerRedisService implements IGrazerRedisService
         $this->dbIndexUser = env('REDIS_DB_INDEX_USER', 3);
         $this->dbUser = env('REDIS_DB_USER', 1);
         $this->dbPackage = env('REDIS_DB_PACKAGE', 2);
+        $this->dbUniqPackageLink = env('REDIS_DB_UNIQ_PACKAGE_LINK', 7);
         $this->dbIndexPackage = env('REDIS_DB_INDEX_PACKAGE', 4);
         $this->dbCounter = env('REDIS_DB_COUNTER', 5);
         $this->dbTokenStore = env('REDIS_DB_AUTH', 6);
@@ -219,6 +218,54 @@ class GrazerRedisService implements IGrazerRedisService
     }
 
     /**
+     * Retrieves labels, origins and expiry for each package hash inbound for the provided Uniq.
+     *
+     * @param string $uniq
+     *
+     * @return array
+     */
+    public function getAllPackageLabelsForUniq(string $uniq): array
+    {
+        $start = 0;
+        $packageMap = array();
+
+        $this->client->select($this->dbUniqPackageLink);
+        $stop = $this->getPackageCountForUniq($uniq);
+
+        if ($stop > 0) {
+            $packageCrate = $this->client->lrange($uniq, $start, $stop);
+
+            // Sure, got some packages, switch to package db, and get some labels
+            $this->client->select($this->dbPackage);
+
+            foreach($packageCrate as $packageHash) {
+                    $label = $this->client->hget($packageHash, "label");        // topic label
+                    $origin = $this->client->hget($packageHash, "origin");                // from
+                    $expiryHours = round(floatval($this->client->ttl($packageHash) / (60*60)), 2); // hours of expiry
+
+                $packageMap[$packageHash] = array(
+                    'label' => $label,
+                    'origin' => $origin,
+                    'expiryHours' => $expiryHours
+                );
+            }
+        }
+        return $packageMap;
+    }
+
+    /**
+     * Return the number of packages on the system, for this given uniq.
+     * @param $uniq
+     *
+     * @return int
+     */
+    public function getPackageCountForUniq($uniq): int
+    {
+        $this->client->select($this->dbUniqPackageLink);
+        return (int)$this->client->llen($uniq);
+    }
+
+    /**
      * @inheritDoc
      */
     public function touchPackageTTL(int $packageId, int $ttlSeconds): int
@@ -281,6 +328,12 @@ class GrazerRedisService implements IGrazerRedisService
         if (!$this->client->exists($packageHash)) {
             $this->client->set($packageHash, $uniqDest);
             $this->client->expire($packageHash, $ttl);
+
+            // This sets the lookup table for uniq->[]packageHash - Keep pushing more to a list.
+            $this->client->select($this->dbUniqPackageLink);
+            $this->client->rpush($uniqDest, $packageHash);
+            // Cannot set a TTL per list element here... need to think about a sweeping process.
+
             return;
         } else {
             abort(409, "Package hash '$packageHash' already exists in the package index");
