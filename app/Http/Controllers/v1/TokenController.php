@@ -24,6 +24,7 @@ use App\Services\GrazerRedis\GrazerRedisService;
 use App\Services\GrazerRedis\GrazerRedisTokenVO;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 /**
  * TokenController.php
@@ -65,6 +66,7 @@ class TokenController extends Controller
             ]);
         $uniq = strval($this->request->get('uniq'));
         $uniqExists = $this->datastore->uniqExists($uniq);
+        $otp = TokenToolkit::makeSimpleOTP();
 
         if ($uniqExists) {
             $user = $this->datastore->getUser($uniq)->get();
@@ -76,7 +78,7 @@ class TokenController extends Controller
                 0,
                 microtime(true),
                 'TokenController Created',
-                TokenToolkit::makeSimpleOTP()
+                $otp
             );
 
             $this->datastore->setApiAccessTokenData($newToken, $tokenVO);
@@ -86,7 +88,10 @@ class TokenController extends Controller
             $this->datastore->giveToken($uniq, $newToken);
 
             $this->log('notifyAndSendOTP response: ' .
-                strval(TokenToolkit::notifyAndSendOTP($uniq, $newToken, $user['email'])));
+                strval(TokenToolkit::notifyAndSendOTP($uniq, $newToken, $user['email'], $otp)));
+            $devLog = sprintf("[DEVELOPER: TOKEN CREATE] - Uniq: %s NewToken: %s OTP: %s",
+                $uniq, $newToken, $otp);
+            $this->log($devLog);
 
             return new Response('Token created', 202);
 
@@ -145,7 +150,7 @@ class TokenController extends Controller
     {
         Log::debug(
             sprintf( '[controller] %s [%s] %s - %s',
-                $this->req->ip(),
+                $this->request->ip(),
                 get_called_class(),
                 __FUNCTION__,
                 $specify
