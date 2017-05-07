@@ -33,7 +33,7 @@ $app->put('/user/{uniq}', ['middleware' => 'auth', 'uses' => $apiVersion.'\UserC
  */
 $app->post('/package', ['middleware' => 'auth', 'uses' => $apiVersion.'\PackageController@create']);
 $app->get('/package/{id}', ['middleware' => 'auth', 'uses' => $apiVersion.'\PackageController@get']);
-
+$app->get('/packages', ['middleware' => 'auth', 'uses' => $apiVersion.'\PackageController@all']);
 
 /**
  * Token

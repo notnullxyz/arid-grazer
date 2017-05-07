@@ -71,7 +71,12 @@ class TokenToolkit
             $otp
         );
 
-        mail($to, $subject, $message, $headers);
+        try {
+            @mail($to, $subject, $message, $headers);
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
     /**
