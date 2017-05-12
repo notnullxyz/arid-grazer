@@ -34,7 +34,7 @@ use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
-    private $req;
+    private $request;
     private $datastore;
 
     /**
@@ -45,7 +45,7 @@ class UserController extends Controller
      */
     public function __construct(Request $request, GrazerRedisService $grazerRedisService)
     {
-        $this->req = $request;
+        $this->request = $request;
         $this->datastore = $grazerRedisService;
     }
 
@@ -58,8 +58,8 @@ class UserController extends Controller
     {
 
         $user = $this->datastore->getUser($uniq);
-        $this->validate($this->req, ['email' => 'bail|required|email|email_unique']);
-        $email = $this->req->get('email');
+        $this->validate($this->request, ['email' => 'bail|required|email|email_unique']);
+        $email = $this->request->get('email');
         $updateUser = $this->datastore->updateUser($user, $email);
 
         return response()->json($updateUser->get(), 200);
@@ -72,7 +72,7 @@ class UserController extends Controller
      */
     public function get()
     {
-        $token = $this->req->header('API-TOKEN');
+        $token = $this->request->header('API-TOKEN');
         $realUniq = $this->datastore->getUniqFromToken($token);
         $cachedUser = $this->datastore->getUser($realUniq);
         return response()->json($cachedUser->get(), 200);
@@ -83,17 +83,10 @@ class UserController extends Controller
      */
     public function create()
     {
-        $email = $this->req->get('email');
-        $user = null;
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->log("FILTER_VALIDATE_EMAIL fail $email");
-            return new Response('Email not accepted', 422);
-        }
+        $this->validate($this->request, ['email' => 'bail|required|email|email_unique']);
 
-        if ($email && $this->datastore->emailExists($email)) {
-            $this->log("email exists $email");
-            return new Response('Email already exists', 409);
-        }
+        $email = $this->request->get('email');
+        $user = null;
 
         do {
             $uniq = $this->mkUniq();
@@ -170,7 +163,7 @@ class UserController extends Controller
     {
         Log::debug(
             sprintf( '[controller] %s [%s] %s - %s',
-                $this->req->ip(),
+                $this->request->ip(),
                 get_called_class(),
                 __FUNCTION__,
                 $specify
